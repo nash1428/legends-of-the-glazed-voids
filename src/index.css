@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 50% -10%, #2e0f5e 0%, #15002a 45%, #0a0014 100%);
+  color: #e8d9ff;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+}
+::-webkit-scrollbar-thumb {
+  background: #4b1a8c;
+  border-radius: 9px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7a2fd6;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-xl border border-violet-glaze/40 bg-void-panel/70 backdrop-blur-sm shadow-void;
+  }
+  .panel-title {
+    @apply text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-glaze/80;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-cyan-glaze text-void-black hover:bg-cyan-deep;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-violet-glaze/50 bg-violet-deep/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider;
+  }
+  .gaugewrap {
+    @apply relative h-2.5 w-full overflow-hidden rounded-full bg-black/50;
+  }
+}
+
+.text-glow {
+  text-shadow: 0 0 8px rgba(0, 200, 255, 0.55);
+}
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.12) 3px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}

@@ -1,0 +1,33 @@
+{
+  "name": "legends-of-the-glazed-voids",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Legends of the Glazed Voids: Captain Glaze & the Interdimensional Doughnut Crisis — an LLM-native social-puzzle adventure.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "serve dist -l ${PORT:-3000}",
+    "preview": "vite preview --port ${PORT:-4173} --host",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "serve": "^14.2.4",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^5.4.11"
+  }
+}
