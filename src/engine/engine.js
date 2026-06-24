@@ -130,6 +130,9 @@ function computeWillingness(state, judge, ctx) {
     state.askPrice +
     ctx.jitter
 
+  // Combo bonus: varied appeals in recent history = +willingness
+  if (ctx.comboBonus) w += ctx.comboBonus
+
   return w
 }
 
@@ -329,6 +332,30 @@ export function applyAction(prevState, judge) {
   state.annoyance = clamp(updateAnnoyance(state, judge))
   deltas.annoyance = state.annoyance - prevAnnoy
 
+  // ---- combo bonus: reward variety in appeals ----
+  const recentDominants = state.history.slice(-3).map((h) => h.dominant).filter((d) => d !== 'none')
+  const uniqueRecent = new Set(recentDominants).size
+  const currentDom = dominantAppeal(av)
+  let comboBonus = 0
+  if (currentDom !== 'none' && !recentDominants.includes(currentDom) && uniqueRecent >= 1) {
+    comboBonus = Math.min(uniqueRecent * 3, 9) // up to +9 for 3+ unique appeals
+    events.combo = uniqueRecent + 1
+  }
+
+  // ---- random events (deterministic, seeded by turn) ----
+  const eventSeed = (state.turn * 4133 + 7919) % 100
+  if (eventSeed < 6 && state.currentRoom === 'glazing_bay' && !state.strayStunned) {
+    events.random = 'stray_stirs'
+    setb('strayAwake')
+    bump('shipIntegrity', -4)
+  } else if (eventSeed >= 94 && (state.currentRoom === 'maw' || state.currentRoom === 'final_conduit') && !state.riftSealed) {
+    events.random = 'rift_flare'
+    bump('shipIntegrity', -5)
+  } else if (eventSeed >= 88 && eventSeed < 94) {
+    events.random = 'hungry'
+    bump('hunger', +8)
+  }
+
   // ---- willingness + verdict ----
   const ctx = {
     effectiveRisk: effRisk,
@@ -336,7 +363,8 @@ export function applyAction(prevState, judge) {
     jitter: jitterFor(state),
     resourceBlocked: res.blocked,
     alreadyDone: done,
-    trickCaught: events.trickCaught
+    trickCaught: events.trickCaught,
+    comboBonus
   }
   let willingness = computeWillingness(state, judge, ctx)
   if (events.trickBelieved) willingness += 18 // believed trick -> cheap compliance

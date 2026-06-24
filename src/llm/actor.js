@@ -17,27 +17,33 @@ function pick(arr, seed) {
 const OBJECTION_LINES = {
   FEAR: [
     "Absolutely not. That has teeth, Cruller — teeth like my résumé, only sharper. I'm not going near it. Reassure me properly, or make staying here even scarier, and we'll talk.",
-    "No. No no no. The Captain does not 'just go over there.' I'm glued to this spot like frosting to a warm cruller. Calm me down first — prove it's safe."
+    "No. No no no. The Captain does not 'just go over there.' I'm glued to this spot like frosting to a warm cruller. Calm me down first — prove it's safe.",
+    "You want me to do WHAT? I can see the danger from here, Cruller. It's big and tooth-shaped. I need reassurance — real reassurance — or a very large bribe."
   ],
   INSULT: [
     "Excuse me? The Captain does NOT respond to that tone. Apologize, or find yourself another glazed hero. I have options. (I have one option. It's you. Still.)",
-    "Manners, Cruller. I am a Captain, not a burnt donut. Soften that tongue or I sulk — and sulking is my core competency."
+    "Manners, Cruller. I am a Captain, not a burnt donut. Soften that tongue or I sulk — and sulking is my core competency.",
+    "Words. Hurt. Even mine, and mine are mostly lies. Apologize and maybe I'll feel heroic enough to move."
   ],
   DISTRUST: [
     "Why would I leap for a voice that hasn't earned it? You give me static and orders. Build some goodwill first — show me you're worth the risk.",
-    "Trust? Between us it's thin as glaze on a diet donut. Give me a reason to believe you, then maybe I move."
+    "Trust? Between us it's thin as glaze on a diet donut. Give me a reason to believe you, then maybe I move.",
+    "I don't trust you further than I can throw a doughnut, which is zero feet because Captains don't throw. Earn it, Cruller."
   ],
   LAZINESS: [
     "Look — I COULD. Theoretically. But 'could' and 'will' are two different pastries, Cruller. Stroke my ego, offer a little something, or I stay seated by default.",
-    "Ugh. Moving. You want me to MOVE. Four steps feels like four hundred when you're this magnificent. Motivate me — glory, a bribe, anything."
+    "Ugh. Moving. You want me to MOVE. Four steps feels like four hundred when you're this magnificent. Motivate me — glory, a bribe, anything.",
+    "The Captain's legs are on strike. They're unionized. I need incentive — flattery, a doughnut, or a really good reason to walk."
   ],
   SUSPICION: [
     "Nice try. I smelled the confectioner's sugar on that one a mile off. You're working an angle, and the Captain does not perform for tricksters. Be straight with me.",
-    "Mmhm. 'Just go over there,' you say, while oozing scheme. Back off the games, Cruller — talk plain, or I shut like a donut box."
+    "Mmhm. 'Just go over there,' you say, while oozing scheme. Back off the games, Cruller — talk plain, or I shut like a donut box.",
+    "I see what you're doing. The angle, the scheme. The Captain has instincts like a bloodhound made of icing. Be honest and I'll consider it."
   ],
   RESOURCE: [
     "With WHAT? I haven't got the goods for that. Bring me resources, or craft what we need at the pastry station. The Captain can't pay a price he doesn't have.",
-    "Resources, Cruller. Resources. I can't do this on charm alone. Find me what we need, or this conversation is half-baked."
+    "Resources, Cruller. Resources. I can't do this on charm alone. Find me what we need, or this conversation is half-baked.",
+    "I'd love to. Truly. But the cupboard is bare and the doughnuts are gone. Gather supplies and we'll talk."
   ]
 }
 
@@ -63,31 +69,38 @@ const FLAG_LINES = {
 const SUCCESS_LINES = {
   move_to_next_room: [
     "Fine. FINE. The Captain will walk. Four steps. I expect a medal. Possibly a parade.",
-    "Ugh — moving. If I pull a strut, you're paying for it. Next room it is. Try not to sound so smug."
+    "Ugh — moving. If I pull a strut, you're paying for it. Next room it is. Try not to sound so smug.",
+    "Oh, ALRIGHT. The things I do for this ship and this operator. Walking. Walking like a hero. Slowly."
   ],
   grab_core: [
     "I did it. I touched it. The Captain has the Glaze Core. The Stray didn't even stir. I am, frankly, majestic.",
-    "Got it. Core in hand, dignity... mostly intact. Let's move before anything with teeth wakes up."
+    "Got it. Core in hand, dignity... mostly intact. Let's move before anything with teeth wakes up.",
+    "Core acquired! The Captain snatched it like a seasoned cruller thief. Which I am NOT. I'm a Captain."
   ],
   seal_rift: [
     "Sealed. Cost me a Glaze Core — do you know what a Core costs? My dignity, Cruller. But the rift's quiet now.",
-    "Rift: sealed. I pressed the thing, it went zap, the static stopped. You may applaud. The Captain accepts applause and cash."
+    "Rift: sealed. I pressed the thing, it went zap, the static stopped. You may applaud. The Captain accepts applause and cash.",
+    "Done. The rift is quiet and I am sweating glaze. One down, one horrifying worm-god to go."
   ],
   feed_vermious: [
     "I fed the pastry god. It burped frosting. We... we live. The portal's open — let's GO, Cruller!",
-    "Cruller to Vermious, down the hatch. The thing purred. Portals open. I am never doing that again."
+    "Cruller to Vermious, down the hatch. The thing purred. Portals open. I am never doing that again.",
+    "FED. The beast is sated. The portal sings. The Captain is officially a god-whisperer. Don't tell anyone."
   ],
   stun_stray: [
     "Sprinkle deployed. The Stray is, ah, napping forcefully. You're welcome. Now grab the Core before it dreams angry.",
-    "Stunned it. A Neutron Sprinkle right between the optics. The Captain has aim AND nerve. Mostly aim."
+    "Stunned it. A Neutron Sprinkle right between the optics. The Captain has aim AND nerve. Mostly aim.",
+    "Direct hit! The Chrome Stray is seeing stars — which is funny because it's chrome. Ha. Ha. Let's go."
   ],
   craft_cruller: [
     "Fryer's on. Two Cores and a Sprinkle walk in, one Void Cruller walks out. Alchemy, Cruller — the Captain does alchemy now.",
-    "Crafted. Void Cruller, hot and ready. I'm basically a god of pastry at this point. Don't ask me to share."
+    "Crafted. Void Cruller, hot and ready. I'm basically a god of pastry at this point. Don't ask me to share.",
+    "One Void Cruller, freshly forged. I could eat it. I WON'T, but I could. The things I sacrifice for this ship."
   ],
   search_side: [
     "The Captain searches. (The Captain delegates searching, but fine.) And — ha! A bonus! Glaze smiles upon the curious.",
-    "Side passage explored. I found something shiny. You're welcome. This is why Captains check lockers, Cruller."
+    "Side passage explored. I found something shiny. You're welcome. This is why Captains check lockers, Cruller.",
+    "Would you look at that! Hidden treasure! The Captain has instincts like a... treasure-instinct... person. Just take it."
   ]
 }
 
@@ -119,12 +132,23 @@ const EMPTY_PROMISE = [
 const HEDGE = [
   "I... almost. Almost! The Captain is THIS close. One more push — flatter me, calm me, sweeten the deal — and I'll do it. Probably.",
   "Ugh, my struts are lifting but my nerve isn't. I'm at 90% coward, 10% hero. Tip the scales, Cruller.",
-  "Nearly! I had one foot out and then the foot got scared. Reassure me harder — or bribe me — and we're golden."
+  "Nearly! I had one foot out and then the foot got scared. Reassure me harder — or bribe me — and we're golden.",
+  "Look, I'm 40% there. Maybe 42%. I need MORE. Mix it up — try a different approach, I respond to variety, Cruller."
 ]
 const UNCLEAR = [
   "I... didn't catch that, Cruller. Was that an order? A compliment? A cruller recipe? Speak plainly — what do you want the Captain to DO?",
   "Come again? The Captain's audio processor is full of doughnut crumbs. Tell me what you need — move? grab? seal? feed? — and maybe I'll listen.",
   "You're mumbling, operator. Use your words. What's the mission? What am I doing here, besides being magnificent and confused?"
+]
+const RANDOM_LINES = {
+  stray_stirs: "(The Chrome Stray twitches in its sleep. Glaze freezes.) Did you SEE that? It MOVED. I didn't sign up for things that move, Cruller!",
+  rift_flare: "(The rift flares — a shockwave of violet static rocks the room.) The ship just hiccupped. Ships should NOT hiccup. Hurry UP.",
+  hungry: "Is it just me or is anyone else hungry? My doughnut-sense is tingling. A snack would be... fortifying. Just saying."
+}
+const COMBO_LINES = [
+  "Ooh, mixing it up! I appreciate a operator who doesn't just repeat themselves. Variety, Cruller — that's how you season a Captain.",
+  "New approach! I respect that. You're not a one-note cruller, are you? Keep them guessing, I always say.",
+  "See, THIS is how you talk to a Captain. Different angles, fresh takes. I almost feel motivated. Almost."
 ]
 
 function strayFlavor(state) {
@@ -154,6 +178,12 @@ function templateActor(state, result) {
   // Unclassifiable input -> ask for clarification (costs a turn, no state change)
   if (events.unclear) return pick(UNCLEAR, seed)
 
+  // Random events flavor (prepended to normal line)
+  let randomPrefix = ''
+  if (events.random && RANDOM_LINES[events.random]) {
+    randomPrefix = RANDOM_LINES[events.random] + ' '
+  }
+
   // Endings
   if (ending && ENDING_LINES[ending]) return ENDING_LINES[ending]
 
@@ -173,21 +203,22 @@ function templateActor(state, result) {
 
   // Success (engine actually advanced the world)
   if (result.success) {
-    const line = result.actionId && SUCCESS_LINES[result.actionId] ? pick(SUCCESS_LINES[result.actionId], seed) : null
-    if (line) return verdict === 'COMPLY_RELUCTANT' ? `${pick(RELUCTANT, seed)} ${line}` : line
-    return pick(RELUCTANT, seed)
+    let line = result.actionId && SUCCESS_LINES[result.actionId] ? pick(SUCCESS_LINES[result.actionId], seed) : null
+    if (events.combo && events.combo >= 2) line = `${pick(COMBO_LINES, seed)} ${line || pick(RELUCTANT, seed)}`
+    if (line) return randomPrefix + (verdict === 'COMPLY_RELUCTANT' ? `${pick(RELUCTANT, seed)} ${line}` : line)
+    return randomPrefix + pick(RELUCTANT, seed)
   }
 
   // Near-miss: persuaded but not enough to act in a high-risk room
   if (verdict === 'COMPLY' || verdict === 'COMPLY_RELUCTANT') {
-    return pick(HEDGE, seed)
+    return randomPrefix + pick(HEDGE, seed)
   }
 
   // Refuse / Counteroffer -> surface the typed objection
   const obj = objection || 'FEAR'
   const base = pick(OBJECTION_LINES[obj] || OBJECTION_LINES.FEAR, seed)
   const ambient = strayFlavor(state)
-  return ambient ? `${ambient} ${base}` : base
+  return randomPrefix + (ambient ? `${ambient} ${base}` : base)
 }
 
 function buildActorContext(state, result) {
@@ -199,6 +230,8 @@ function buildActorContext(state, result) {
   if (result.events?.emptyPromise) bits.push('EMPTY_BRIBE (player offered a bribe they do not have)')
   if (result.events?.alreadyDone) bits.push('ALREADY_DONE (player asked for an action that is already completed; note it and move on)')
   if (result.events?.unclear) bits.push('UNCLEAR_INPUT (you did not understand what the player wants — ask them to clarify what action they want)')
+  if (result.events?.random) bits.push(`RANDOM_EVENT: ${result.events.random} (react to this environmental event in character)`)
+  if (result.events?.combo) bits.push(`COMBO: player used ${result.events.combo} different appeal types in a row — react positively to their variety`)
   if (result.events?.sidePickup) bits.push(`SIDE_PICKUP (you found a bonus ${result.events.sidePickup.label} in a side passage — react with pleasant surprise)`)
   if (result.events?.crafted) bits.push('YOU CRAFTED A VOID CRULLER (2 Cores + 1 Sprinkle at the pastry station)')
   if (result.progress?.riftSealed) bits.push('YOU JUST SEALED THE RIFT (cost a Glaze Core)')

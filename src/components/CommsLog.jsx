@@ -11,11 +11,8 @@ const VERDICT_CHIP = {
   UNCLEAR: 'border-violet-glaze/40 text-glaze-cream/50'
 }
 
-// Button enable/disable rules per PRD:
-// Move  — enabled in Bridge (required action IS move). Disabled elsewhere.
-// Grab  — enabled only in Glazing Bay. Elsewhere: "Nothing to grab here."
-// Exit  — enabled only in The Maw after rift sealed.
-const BUTTONS = [
+// Action buttons — gated by room context
+const ACTION_BUTTONS = [
   {
     id: 'move',
     label: 'Move',
@@ -73,8 +70,68 @@ const BUTTONS = [
       if (s.neutronSprinkles < 1) return 'Need 1 Neutron Sprinkle'
       return null
     }
+  },
+  {
+    id: 'stun',
+    label: 'Stun',
+    icon: '✦',
+    actionId: 'stun_stray',
+    text: "Stun the Chrome Stray with a Neutron Sprinkle. Quick, before it wakes!",
+    can: (s) => s.currentRoom === 'glazing_bay' && s.neutronSprinkles >= 1 && !s.strayStunned && !s.gameOver,
+    hint: (s) => {
+      if (s.currentRoom !== 'glazing_bay') return 'Only in the Glazing Bay'
+      if (s.strayStunned) return 'Already stunned'
+      if (s.neutronSprinkles < 1) return 'Need a Neutron Sprinkle'
+      return null
+    }
   }
 ]
+
+// Appeal strategy buttons — always available, send pure persuasion (no action)
+const APPEAL_BUTTONS = [
+  { id: 'flatter', label: 'Flatter', icon: '👑', text: "Captain, you're the finest captain in the fleet. No one else can do this. You're a legend." },
+  { id: 'reassure', label: 'Reassure', icon: '🛡', text: "It's safe, Captain. I've scanned everything. You won't get hurt. I've got your back." },
+  { id: 'bribe', label: 'Bribe', icon: '🍩', text: "I'll make it worth your while. A doughnut for your courage, Captain. What do you say?" },
+  { id: 'argue', label: 'Argue', icon: '📊', text: "Think about it logically. If we do nothing, the ship sinks. This is the only way forward." },
+  { id: 'threaten', label: 'Threaten', icon: '⚠', text: "Do it, or I'll shut you down and find a captain who will. Last chance." },
+  { id: 'apologize', label: 'Apologize', icon: '🙏', text: "I'm sorry, Captain. I was out of line. Let's try this together." }
+]
+
+// Context-aware suggestion chips
+function getSuggestions(state) {
+  const room = state.currentRoom
+  const sugg = []
+  if (state.gameOver) return sugg
+  if (room === 'bridge') {
+    sugg.push("You're the best captain — move forward!")
+    sugg.push("It's safe, I checked. Move on.")
+  }
+  if (room === 'north_corridor') {
+    sugg.push("Search the panel — might be loot!")
+    sugg.push("Keep moving, Captain. Safe ahead.")
+  }
+  if (room === 'glazing_bay') {
+    sugg.push("The Stray is dormant — grab the core!")
+    sugg.push("Reassure Glaze — it's safe.")
+    if (state.neutronSprinkles > 0 && !state.strayStunned) sugg.push("Stun the Stray first?")
+  }
+  if (room === 'east_shaft') {
+    sugg.push("Check the locker — free loot!")
+    sugg.push("Move to The Maw. Hurry!")
+  }
+  if (room === 'maw') {
+    if (!state.riftSealed) sugg.push("Seal the rift — it's the only way!")
+    if (state.riftSealed && state.glazeCores >= 2 && state.neutronSprinkles >= 1) sugg.push("Craft a Void Cruller!")
+    if (state.riftSealed) sugg.push("Move to the Final Conduit!")
+  }
+  if (room === 'final_conduit') {
+    sugg.push("Feed Vermious — escape!")
+    if (state.voidCrullers < 1) sugg.push("No cruller — go back and craft one!")
+  }
+  if (state.composure < 30) sugg.push("Reassure Glaze — he's panicking!")
+  if (state.trust < 35) sugg.push("Apologize to rebuild trust!")
+  return sugg.slice(0, 3)
+}
 
 export default function CommsLog() {
   const { log, status, send, state } = useGame()
@@ -93,10 +150,23 @@ export default function CommsLog() {
     setText('')
   }
 
-  const clickButton = (btn) => {
+  const clickAction = (btn) => {
     if (status === 'thinking' || state.gameOver) return
     send(btn.text, btn.actionId)
   }
+
+  const clickAppeal = (btn) => {
+    if (status === 'thinking' || state.gameOver) return
+    send(btn.text)
+  }
+
+  const clickSuggestion = (sugg) => {
+    if (status === 'thinking' || state.gameOver) return
+    setText(sugg)
+    inputRef.current?.focus()
+  }
+
+  const suggestions = getSuggestions(state)
 
   return (
     <section className="flex h-full flex-col panel overflow-hidden">
@@ -117,7 +187,25 @@ export default function CommsLog() {
         <div ref={endRef} />
       </div>
 
-      <form onSubmit={submit} className="border-t border-violet-glaze/30 p-3">
+      {/* Suggestion chips */}
+      {suggestions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 border-t border-violet-glaze/20 px-3 pt-2">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => clickSuggestion(s)}
+              disabled={status === 'thinking' || status === 'over'}
+              className="rounded-full border border-violet-glaze/30 bg-violet-deep/30 px-2.5 py-1 text-[10px] text-glaze-cream/70 transition hover:border-cyan-glaze/50 hover:text-cyan-glaze disabled:opacity-40"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={submit} className="space-y-2 border-t border-violet-glaze/30 p-3">
+        {/* Text input */}
         <div className="flex items-end gap-2">
           <div className="relative flex-1">
             <textarea
@@ -148,29 +236,52 @@ export default function CommsLog() {
           </button>
         </div>
 
-        {/* Action buttons */}
-        <div className="mt-2 grid grid-cols-5 gap-1.5">
-          {BUTTONS.map((btn) => {
-            const enabled = btn.can(state) && status !== 'thinking' && status !== 'over'
-            const hint = btn.hint(state)
-            return (
+        {/* Appeal strategy buttons */}
+        <div>
+          <div className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-glaze-cream/40">Persuasion</div>
+          <div className="grid grid-cols-6 gap-1">
+            {APPEAL_BUTTONS.map((btn) => (
               <button
                 key={btn.id}
                 type="button"
-                disabled={!enabled}
-                onClick={() => clickButton(btn)}
-                title={hint || btn.text}
-                className={`group relative flex flex-col items-center gap-0.5 rounded-lg border px-1 py-1.5 text-xs font-semibold transition ${
-                  enabled
-                    ? 'border-cyan-glaze/50 bg-cyan-glaze/10 text-cyan-glaze hover:bg-cyan-glaze/20 hover:border-cyan-glaze'
-                    : 'border-violet-glaze/20 bg-void-deep/40 text-glaze-cream/30 cursor-not-allowed'
-                }`}
+                disabled={status === 'thinking' || status === 'over'}
+                onClick={() => clickAppeal(btn)}
+                title={btn.text}
+                className="flex flex-col items-center gap-0.5 rounded-lg border border-glaze-pink/30 bg-glaze-pink/5 px-1 py-1.5 text-[10px] font-semibold text-glaze-pink/80 transition hover:bg-glaze-pink/15 hover:border-glaze-pink/50 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <span className="text-sm leading-none">{btn.icon}</span>
                 <span>{btn.label}</span>
               </button>
-            )
-          })}
+            ))}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div>
+          <div className="mb-1 text-[9px] font-semibold uppercase tracking-wider text-glaze-cream/40">Actions</div>
+          <div className="grid grid-cols-6 gap-1">
+            {ACTION_BUTTONS.map((btn) => {
+              const enabled = btn.can(state) && status !== 'thinking' && status !== 'over'
+              const hint = btn.hint(state)
+              return (
+                <button
+                  key={btn.id}
+                  type="button"
+                  disabled={!enabled}
+                  onClick={() => clickAction(btn)}
+                  title={hint || btn.text}
+                  className={`flex flex-col items-center gap-0.5 rounded-lg border px-1 py-1.5 text-[10px] font-semibold transition ${
+                    enabled
+                      ? 'border-cyan-glaze/50 bg-cyan-glaze/10 text-cyan-glaze hover:bg-cyan-glaze/20 hover:border-cyan-glaze'
+                      : 'border-violet-glaze/20 bg-void-deep/40 text-glaze-cream/30 cursor-not-allowed'
+                  }`}
+                >
+                  <span className="text-sm leading-none">{btn.icon}</span>
+                  <span>{btn.label}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </form>
     </section>
@@ -212,7 +323,7 @@ function Msg({ m }) {
 
 function DeltaStrip({ deltas }) {
   const entries = []
-  const labels = { composure: 'Comp', trust: 'Trust', ego: 'Ego', hunger: 'Hunger', suspicion: 'Susp', resentment: 'Res', shipIntegrity: 'Hull', glazeCores: 'Core', voidCrullers: 'Cruller', neutronSprinkles: 'Sprkl' }
+  const labels = { composure: 'Comp', trust: 'Trust', ego: 'Ego', hunger: 'Hunger', suspicion: 'Susp', resentment: 'Res', shipIntegrity: 'Hull', glazeCores: 'Core', voidCrullers: 'Cruller', neutronSprinkles: 'Sprkl', raspberrySingularity: 'Rasp', forbiddenDoughnut: 'Frbdn' }
   for (const [k, v] of Object.entries(deltas)) {
     if (typeof v === 'number' && v !== 0 && labels[k]) {
       entries.push([labels[k], v])
