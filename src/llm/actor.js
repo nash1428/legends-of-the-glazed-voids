@@ -98,9 +98,11 @@ const SUCCESS_LINES = {
     "One Void Cruller, freshly forged. I could eat it. I WON'T, but I could. The things I sacrifice for this ship."
   ],
   search_side: [
-    "The Captain searches. (The Captain delegates searching, but fine.) And — ha! A bonus! Glaze smiles upon the curious.",
-    "Side passage explored. I found something shiny. You're welcome. This is why Captains check lockers, Cruller.",
-    "Would you look at that! Hidden treasure! The Captain has instincts like a... treasure-instinct... person. Just take it."
+    "The Captain searches. (The Captain delegates searching, but fine.) And — ha! A bonus doughnut! Glaze smiles upon the curious. And fills me. With energy. Delicious.",
+    "Side passage explored. I found a doughnut! You're welcome. This is why Captains check lockers, Cruller. Nom.",
+    "Would you look at that! A hidden doughnut! The Captain has instincts like a pastry-seeking missile. Eating it. Right now. Don't judge me.",
+    "Jackpot! A doughnut, hidden back here! The void provides. The Captain consumes. This is symbiosis, Cruller.",
+    "Found one! A doughnut in the wild. I'm eating it for courage. And for flavor. Mostly flavor. Okay, entirely flavor."
   ]
 }
 
@@ -232,7 +234,7 @@ function buildActorContext(state, result) {
   if (result.events?.unclear) bits.push('UNCLEAR_INPUT (you did not understand what the player wants — ask them to clarify what action they want)')
   if (result.events?.random) bits.push(`RANDOM_EVENT: ${result.events.random} (react to this environmental event in character)`)
   if (result.events?.combo) bits.push(`COMBO: player used ${result.events.combo} different appeal types in a row — react positively to their variety`)
-  if (result.events?.sidePickup) bits.push(`SIDE_PICKUP (you found a bonus ${result.events.sidePickup.label} in a side passage — react with pleasant surprise)`)
+  if (result.events?.sidePickup) bits.push(`SIDE_PICKUP (you found and ate a ${result.events.sidePickup.label} ${result.events.sidePickup.icon} in a side passage — energy ${result.events.sidePickup.energy}! React with joy and doughnut-related commentary)`)
   if (result.events?.crafted) bits.push('YOU CRAFTED A VOID CRULLER (2 Cores + 1 Sprinkle at the pastry station)')
   if (result.progress?.riftSealed) bits.push('YOU JUST SEALED THE RIFT (cost a Glaze Core)')
   if (result.progress?.vermiousFed) bits.push('YOU JUST FED VERMIOUS -> PORTAL OPEN')

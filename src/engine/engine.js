@@ -91,10 +91,10 @@ function dominantAppeal(av) {
 function effectiveRisk(state, actionId) {
   const room = ROOMS[state.currentRoom]
   let r = (room?.risk || 0) * 100
-  if (actionId === 'grab_core') r = Math.max(r, 72)
-  if (actionId === 'stun_stray') r = Math.max(r, 60)
-  if (actionId === 'seal_rift') r = Math.max(r, 78)
-  if (actionId === 'feed_vermious') r = Math.max(r, 88)
+  if (actionId === 'grab_core') r = Math.max(r, 55)
+  if (actionId === 'stun_stray') r = Math.max(r, 45)
+  if (actionId === 'seal_rift') r = Math.max(r, 60)
+  if (actionId === 'feed_vermious') r = Math.max(r, 65)
   return clamp(r, 0, 100)
 }
 
@@ -229,9 +229,8 @@ export function applyAction(prevState, judge) {
   // ---- per-verb side effects ----
   applyVerbEffects(state, judge, av, events, bump, setb)
 
-  // ---- special: search side passage (always succeeds, not gated by willingness) ----
+  // ---- special: search side passage (random doughnut drop + energy) ----
   if (valid && actionId === 'search_side' && room.sidePassage) {
-    const sp = room.sidePassage
     const already = state.sideSearched?.[state.currentRoom]
     if (already) {
       events.alreadyDone = true
@@ -252,10 +251,32 @@ export function applyAction(prevState, judge) {
         success: false
       })
     }
-    // grant the side item
+    // Random doughnut drop (deterministic seed by turn)
+    const searchSeed = (state.turn * 6151 + 7919) % 100
+    let dropItem, dropLabel, dropIcon, energyGain
+    if (searchSeed < 40) {
+      // 40% chance: Glaze Core
+      dropItem = 'glazeCores'; dropLabel = 'Glaze Core'; dropIcon = '◆'; energyGain = 1
+    } else if (searchSeed < 65) {
+      // 25% chance: Neutron Sprinkle
+      dropItem = 'neutronSprinkles'; dropLabel = 'Neutron Sprinkle'; dropIcon = '✦'; energyGain = 2
+    } else if (searchSeed < 82) {
+      // 17% chance: Void Cruller
+      dropItem = 'voidCrullers'; dropLabel = 'Void Cruller'; dropIcon = '◯'; energyGain = 3
+    } else if (searchSeed < 92) {
+      // 10% chance: Raspberry Singularity
+      dropItem = 'raspberrySingularity'; dropLabel = 'Raspberry Singularity'; dropIcon = '★'; energyGain = 4
+    } else {
+      // 8% chance: Forbidden Doughnut
+      dropItem = 'forbiddenDoughnut'; dropLabel = 'Forbidden Doughnut'; dropIcon = '☠'; energyGain = 5
+    }
     state.sideSearched = { ...(state.sideSearched || {}), [state.currentRoom]: true }
-    bump(sp.item, +1)
-    events.sidePickup = { item: sp.item, label: sp.itemLabel }
+    bump(dropItem, +1)
+    // eating the doughnut fills energy (hunger) and composure
+    const eatEnergy = Math.min(energyGain * 5, 25)
+    bump('hunger', +eatEnergy)
+    bump('composure', +energyGain * 2)
+    events.sidePickup = { item: dropItem, label: dropLabel, icon: dropIcon, energy: energyGain }
     state.history.push({ dominant: dominantAppeal(av), actionId, verdict: 'COMPLY' })
     state.history = state.history.slice(-6)
     state.turnsInRoom += 1
@@ -266,7 +287,7 @@ export function applyAction(prevState, judge) {
       actionId,
       ctx: { effectiveRisk: 0, fearTerm: 0, jitter: 0, resourceBlocked: false, alreadyDone: false, trickCaught: false },
       events,
-      progress: { sidePickup: sp.item },
+      progress: { sidePickup: dropItem },
       ending: null,
       willingness: THRESHOLD + 20,
       diff: 20,
@@ -344,16 +365,16 @@ export function applyAction(prevState, judge) {
 
   // ---- random events (deterministic, seeded by turn) ----
   const eventSeed = (state.turn * 4133 + 7919) % 100
-  if (eventSeed < 6 && state.currentRoom === 'glazing_bay' && !state.strayStunned) {
+  if (eventSeed < 4 && state.currentRoom === 'glazing_bay' && !state.strayStunned && !state.strayAwake) {
     events.random = 'stray_stirs'
     setb('strayAwake')
-    bump('shipIntegrity', -4)
-  } else if (eventSeed >= 94 && (state.currentRoom === 'maw' || state.currentRoom === 'final_conduit') && !state.riftSealed) {
+    bump('shipIntegrity', -2)
+  } else if (eventSeed >= 96 && (state.currentRoom === 'maw' || state.currentRoom === 'final_conduit') && !state.riftSealed) {
     events.random = 'rift_flare'
-    bump('shipIntegrity', -5)
-  } else if (eventSeed >= 88 && eventSeed < 94) {
+    bump('shipIntegrity', -3)
+  } else if (eventSeed >= 90 && eventSeed < 96) {
     events.random = 'hungry'
-    bump('hunger', +8)
+    bump('hunger', +6)
   }
 
   // ---- willingness + verdict ----
@@ -385,8 +406,8 @@ export function applyAction(prevState, judge) {
   // ---- success / failure ----
   let progress = {}
   let ending = null
-  const requireComply = (room?.risk || 0) >= 0.6
-  const requiredRank = requireComply ? VERDICT_RANK[VERDICT.COMPLY] : VERDICT_RANK[VERDICT.COMPLY_RELUCTANT]
+  // COMPLY_RELUCTANT is enough to succeed in any room (makes ~50/50 win rate achievable)
+  const requiredRank = VERDICT_RANK[VERDICT.COMPLY_RELUCTANT]
   const success = valid && !done && !res.blocked && VERDICT_RANK[verdict] >= requiredRank
   if (success) {
     const out = applySuccess(state, room, actionId, events, bump, setb)
@@ -612,14 +633,14 @@ function applyFailure(state, room, actionId, verdict, events, bump, setb) {
 // Ambient damage.
 // ---------------------------------------------------------------------------
 function applyAmbientDamage(state, bump) {
-  // rift drains while in the Maw or Final Conduit and unsealed
-  if ((state.currentRoom === 'maw' || state.currentRoom === 'final_conduit') && !state.riftSealed) bump('shipIntegrity', -6)
-  // east shaft ambient rift energy
-  if (state.currentRoom === 'east_shaft') bump('shipIntegrity', -2)
-  if (state.currentRoom === 'glazing_bay' && state.strayAwake && !state.strayStunned) bump('shipIntegrity', -6)
+  // rift drains while in the Maw or Final Conduit and unsealed (reduced)
+  if ((state.currentRoom === 'maw' || state.currentRoom === 'final_conduit') && !state.riftSealed) bump('shipIntegrity', -3)
+  // east shaft ambient rift energy (reduced)
+  if (state.currentRoom === 'east_shaft') bump('shipIntegrity', -1)
+  if (state.currentRoom === 'glazing_bay' && state.strayAwake && !state.strayStunned) bump('shipIntegrity', -3)
   // Vermious rampages if rift sealed but not fed and player stalls in Final Conduit
-  if (state.currentRoom === 'final_conduit' && state.riftSealed && !state.vermiousFed && state.turnsInRoom > 3) {
-    bump('shipIntegrity', -12)
+  if (state.currentRoom === 'final_conduit' && state.riftSealed && !state.vermiousFed && state.turnsInRoom > 4) {
+    bump('shipIntegrity', -8)
   }
   return null
 }

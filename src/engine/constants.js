@@ -10,10 +10,10 @@ export const W = {
   reassure: 24,
   argue: 22,
   threat: 26,
-  fearK: 0.42,
-  annoyK: 0.55,
-  suspK: 0.5,
-  resK: 0.5,
+  fearK: 0.28,
+  annoyK: 0.40,
+  suspK: 0.4,
+  resK: 0.4,
   heroMax: 16
 }
 
@@ -27,7 +27,7 @@ export const VERDICT = {
 
 export const OBJECTIONS = ['FEAR', 'INSULT', 'DISTRUST', 'LAZINESS', 'SUSPICION', 'RESOURCE']
 
-export const JITTER = 2 // ±2 max
+export const JITTER = 3 // ±3 max per PRD
 
 export const APPEALS = [
   'command',
