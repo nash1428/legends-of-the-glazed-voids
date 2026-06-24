@@ -1,130 +1,56 @@
+// ============================================================================
+// ShipPanel — right column: dungeon-maze visual of the U.S.V. Old-Fashioned
+// with overlaid critical readouts (mood, objective, resources, bars).
+// ============================================================================
+
 import { ROOMS } from '../engine/rooms.js'
-import GlazePortrait from './GlazePortrait.jsx'
-import RoomArt from './RoomArt.jsx'
+import ShipMaze from './ShipMaze.jsx'
 import GaugeBar from './GaugeBar.jsx'
 
-const RESOURCE_META = {
-  glazeCores: { label: 'Glaze Cores', icon: '◆', color: 'text-cyan-glaze' },
-  voidCrullers: { label: 'Void Crullers', icon: '◯', color: 'text-glaze-pink' },
-  neutronSprinkles: { label: 'Neutron Sprinkles', icon: '✦', color: 'text-glaze-gold' }
-}
+const RESOURCES = [
+  { key: 'glazeCores', icon: '◆', label: 'Cores', color: 'text-cyan-glaze' },
+  { key: 'voidCrullers', icon: '◯', label: 'Crullers', color: 'text-glaze-pink' },
+  { key: 'neutronSprinkles', icon: '✦', label: 'Sprinkles', color: 'text-glaze-gold' }
+]
 
 export default function ShipPanel({ state, mood }) {
   const room = ROOMS[state.currentRoom]
   return (
-    <aside className="flex h-full flex-col gap-3 overflow-y-auto p-3 lg:p-4">
-      {/* Room */}
-      <section className="panel p-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="panel-title">{room?.subtitle}</div>
-            <h2 className="font-display text-lg font-bold text-glaze-cream text-glow">{room?.name}</h2>
-          </div>
-          <span className={`chip ${room?.risk >= 0.6 ? 'border-danger/60 text-danger' : 'border-ok/50 text-ok'}`}>
-            {room?.risk >= 0.6 ? 'High Risk' : 'Low Risk'}
-          </span>
-        </div>
-        <div className="mt-2">
-          <RoomArt
-            room={state.currentRoom}
-            riftSealed={state.riftSealed}
-            strayAwake={state.strayAwake}
-            strayStunned={state.strayStunned}
-          />
-        </div>
-        <p className="mt-2 text-[11px] leading-snug text-glaze-cream/70">
-          <span className="font-semibold text-cyan-glaze">Objective:</span> {room?.objective}
-        </p>
-      </section>
+    <aside className="relative h-full overflow-hidden bg-void-black">
+      <ShipMaze state={state} mood={mood} />
 
-      {/* Glaze */}
-      <section className="panel p-3">
-        <div className="flex items-center gap-3">
-          <GlazePortrait mood={mood} composure={state.composure} />
-          <div className="min-w-0 flex-1">
-            <div className="panel-title">Captain GLAZE-7</div>
-            <div className="font-display text-base font-bold text-glaze-cream">Captain Glaze</div>
-            <div className="mt-1">
-              <span className="chip border-cyan-glaze/50 text-cyan-glaze">Mood: {mood}</span>
-            </div>
-            <p className="mt-1.5 text-[10px] italic leading-snug text-glaze-cream/50">{tellFor(mood)}</p>
-          </div>
-        </div>
-      </section>
+      {/* scanline atmosphere */}
+      <div className="pointer-events-none absolute inset-0 scanlines" />
 
-      {/* Gauges */}
-      <section className="panel p-3">
-        <div className="mb-2 panel-title">Ship-Truth</div>
-        <div className="grid grid-cols-1 gap-2.5">
-          <GaugeBar label="shipIntegrity" value={state.shipIntegrity} />
-          <GaugeBar label="composure" value={state.composure} />
-          <GaugeBar label="trust" value={state.trust} />
-          <div className="grid grid-cols-2 gap-2.5">
-            <GaugeBar label="ego" value={state.ego} hidden hint="read his tone" />
-            <GaugeBar label="hunger" value={state.hunger} hidden hint="read his tone" />
-          </div>
+      {/* top overlay: mood + objective + resources */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-void-black/85 via-void-black/40 to-transparent p-2.5">
+        <div className="min-w-0">
+          <span className="chip border-cyan-glaze/50 text-cyan-glaze">Mood: {mood}</span>
+          <p className="mt-1 max-w-[58%] text-[10px] leading-tight text-glaze-cream/85">
+            <span className="font-semibold text-cyan-glaze">Objective:</span>{' '}
+            {state.gameOver ? 'Run complete' : room?.objective}
+          </p>
         </div>
-      </section>
-
-      {/* Resources */}
-      <section className="panel p-3">
-        <div className="mb-2 panel-title">Resources</div>
-        <div className="grid grid-cols-3 gap-2">
-          {Object.entries(RESOURCE_META).map(([key, m]) => (
-            <div key={key} className="rounded-lg border border-violet-glaze/30 bg-void-deep/60 p-2 text-center">
-              <div className={`text-xl font-bold ${m.color}`}>{m.icon}</div>
-              <div className="font-mono text-lg font-bold text-glaze-cream">{state[key]}</div>
-              <div className="text-[9px] uppercase tracking-wide text-glaze-cream/50">{m.label}</div>
+        <div className="flex flex-col items-end gap-1">
+          {RESOURCES.map((r) => (
+            <div
+              key={r.key}
+              className="flex items-center gap-1.5 rounded-md border border-violet-glaze/40 bg-void-deep/70 px-1.5 py-0.5"
+            >
+              <span className={`text-xs font-bold ${r.color}`}>{r.icon}</span>
+              <span className="font-mono text-sm font-bold text-glaze-cream">{state[r.key]}</span>
+              <span className="text-[8px] uppercase tracking-wide text-glaze-cream/50">{r.label}</span>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Threats */}
-      <section className="panel p-3">
-        <div className="mb-2 panel-title">Status</div>
-        <ul className="space-y-1.5 text-[11px]">
-          <StatusRow ok={state.riftSealed} label="Rift" okText="Sealed" badText="Bleeding" />
-          <StatusRow
-            ok={state.currentRoom !== 'glazing_bay' || state.strayStunned || !state.strayAwake}
-            warn={!state.strayStunned && state.strayAwake && state.currentRoom === 'glazing_bay'}
-            label="Chrome Stray"
-            okText="Dormant / Stunned"
-            badText="Awake & gnawing"
-            warnText="Stirring"
-          />
-          <StatusRow ok={state.vermiousFed} label="Vermious" okText="Fed — portal open" badText="Hungry" />
-        </ul>
-      </section>
+      {/* bottom overlay: bars */}
+      <div className="absolute inset-x-0 bottom-0 space-y-2 bg-gradient-to-t from-void-black/90 via-void-black/50 to-transparent p-2.5 pt-6">
+        <GaugeBar label="shipIntegrity" value={state.shipIntegrity} />
+        <GaugeBar label="composure" value={state.composure} />
+        <GaugeBar label="trust" value={state.trust} />
+      </div>
     </aside>
   )
-}
-
-function StatusRow({ ok, warn, label, okText, badText, warnText }) {
-  const color = warn ? 'text-warn' : ok ? 'text-ok' : 'text-danger'
-  const dot = warn ? 'bg-warn' : ok ? 'bg-ok' : 'bg-danger'
-  return (
-    <li className="flex items-center justify-between">
-      <span className="text-glaze-cream/70">{label}</span>
-      <span className={`flex items-center gap-1.5 font-semibold ${color}`}>
-        <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />
-        {warn ? warnText : ok ? okText : badText}
-      </span>
-    </li>
-  )
-}
-
-function tellFor(mood) {
-  switch (mood) {
-    case 'Terrified':
-      return "'I—I can't. My icing's shaking.'"
-    case 'Preening':
-      return "'Obviously, I'm the best Captain who ever glazed.'"
-    case 'Suspicious':
-      return "'Mmhm. I see you scheming, operator.'"
-    case 'Sulking':
-      return "'...whatever. Do it yourself, then.'"
-    default:
-      return "'The Captain is... considering his options.'"
-  }
 }

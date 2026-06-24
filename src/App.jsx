@@ -42,11 +42,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1.4fr_1fr]">
-        <div className="min-h-0 overflow-hidden border-b border-violet-glaze/30 lg:border-b-0 lg:border-r">
+      <main className="grid flex-1 grid-cols-1 grid-rows-[40vh_1fr] overflow-hidden lg:grid-cols-[1.4fr_1fr] lg:grid-rows-1">
+        <div className="order-2 min-h-0 overflow-hidden border-t border-violet-glaze/30 lg:order-none lg:col-start-1 lg:border-t-0 lg:border-r">
           <CommsLog />
         </div>
-        <div className="min-h-0 overflow-hidden">
+        <div className="order-1 min-h-0 overflow-hidden lg:order-none lg:col-start-2">
           <ShipPanel state={state} mood={mood} />
         </div>
       </main>
