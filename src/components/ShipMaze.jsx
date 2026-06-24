@@ -1,31 +1,43 @@
 // ============================================================================
-// ShipMaze — dungeon-maze visual of the U.S.V. Old-Fashioned.
-// Rooms as doughnut nodes, corridors as paths, current room highlighted with
-// the Glaze avatar, open rifts pulsing red, Chrome Strays as glowing cat icons,
-// Vermious the Glazeworm at the Maw, objective marker, visited/unvisited states.
+// ShipMaze — functional dungeon-maze visual of the U.S.V. Old-Fashioned.
+// 4 room nodes in forward order: Bridge → Glazing Bay → The Maw → Escape Portal.
+// Corridors with locked (red barrier) / unlocked (open pulse) doors.
+// Glaze avatar animates along corridors when advancing. Completed rooms get
+// checkmarks. Fog of war dims rooms beyond current+1. Rifts, Chrome Stray,
+// and Vermious rendered as in-maze entities.
 // ============================================================================
 
-import { ROOMS } from '../engine/rooms.js'
+import { ROOM_ORDER } from '../engine/rooms.js'
 
-const ORDER = ['bridge', 'glazing_bay', 'maw']
 const NODES = {
-  bridge: { x: 160, y: 92, name: 'The Bridge', sub: 'Command Deck' },
-  glazing_bay: { x: 160, y: 292, name: 'Glazing Bay', sub: 'Core Repository' },
-  maw: { x: 160, y: 488, name: 'The Maw', sub: 'Engineering' }
+  bridge: { x: 160, y: 78, name: 'The Bridge', sub: 'Command Deck' },
+  glazing_bay: { x: 160, y: 232, name: 'Glazing Bay', sub: 'Core Repository' },
+  maw: { x: 160, y: 386, name: 'The Maw', sub: 'Engineering' },
+  escape_portal: { x: 160, y: 528, name: 'Escape Portal', sub: 'Extraction' }
 }
+
+// corridor paths between consecutive rooms (door at midpoint)
+const CORRIDORS = [
+  { from: 'bridge', to: 'glazing_bay', d: 'M160 112 C 196 150, 124 188, 160 198', doorY: 155 },
+  { from: 'glazing_bay', to: 'maw', d: 'M160 266 C 196 304, 124 342, 160 352', doorY: 309 },
+  { from: 'maw', to: 'escape_portal', d: 'M160 420 C 196 458, 124 494, 160 494', doorY: 457 }
+]
 
 function objectivePos(state) {
   if (state.gameOver) return null
-  if (state.currentRoom === 'bridge') return { x: 160, y: 168, label: 'Reach Hatch' }
-  if (state.currentRoom === 'glazing_bay') return { x: 160, y: 226, label: 'Grab Core' }
-  if (!state.riftSealed) return { x: 108, y: 462, label: 'Seal Rift' }
-  if (!state.vermiousFed) return { x: 160, y: 552, label: 'Feed Vermious' }
+  if (state.currentRoom === 'bridge') return { x: 220, y: 155, label: 'Move Forward' }
+  if (state.currentRoom === 'glazing_bay') return { x: 220, y: 232, label: 'Grab Core' }
+  if (state.currentRoom === 'maw') {
+    if (!state.riftSealed) return { x: 100, y: 360, label: 'Seal Rift' }
+    return { x: 220, y: 457, label: 'Feed Vermious' }
+  }
   return null
 }
 
 export default function ShipMaze({ state, mood }) {
   const cur = state.currentRoom
-  const curIdx = ORDER.indexOf(cur)
+  const curIdx = ROOM_ORDER.indexOf(cur)
+  const completed = new Set(state.completedRooms || [])
   const obj = objectivePos(state)
 
   return (
@@ -54,33 +66,51 @@ export default function ShipMaze({ state, mood }) {
           <stop offset="0%" stopColor="#bff4ff" />
           <stop offset="100%" stopColor="#00C8FF" />
         </radialGradient>
+        <radialGradient id="portal" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="40%" stopColor="#00C8FF" />
+          <stop offset="100%" stopColor="#15002a" />
+        </radialGradient>
         <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="3.2" />
         </filter>
       </defs>
 
-      {/* background */}
       <rect width="320" height="600" fill="url(#bg)" />
       <Starfield />
-
-      {/* hull frame */}
       <Hull />
 
-      {/* corridors */}
-      <Corridor d="M160 126 C 198 172, 122 214, 160 258" />
-      <Corridor d="M160 326 C 198 372, 122 414, 160 454" />
+      {/* corridors + doors */}
+      {CORRIDORS.map((c, i) => {
+        const locked = !completed.has(c.from)
+        const target = Math.min(curIdx + 1, ROOM_ORDER.length - 1)
+        const fogged = i > target
+        return (
+          <g key={c.from} opacity={fogged ? 0.25 : 1}>
+            <Corridor d={c.d} />
+            <Door x={160} y={c.doorY} locked={locked} fogged={fogged} />
+          </g>
+        )
+      })}
 
       {/* room nodes */}
-      {ORDER.map((id, i) => (
-        <RoomNode
-          key={id}
-          id={id}
-          node={NODES[id]}
-          isCurrent={id === cur}
-          visited={i <= curIdx}
-          state={state}
-        />
-      ))}
+      {ROOM_ORDER.map((id, i) => {
+        const isCurrent = id === cur
+        const isCompleted = completed.has(id)
+        const target = Math.min(curIdx + 1, ROOM_ORDER.length - 1)
+        const fogged = i > target
+        return (
+          <RoomNode
+            key={id}
+            id={id}
+            node={NODES[id]}
+            isCurrent={isCurrent}
+            isCompleted={isCompleted}
+            fogged={fogged}
+            state={state}
+          />
+        )
+      })}
 
       {/* entities */}
       <ChromeStray state={state} />
@@ -90,8 +120,13 @@ export default function ShipMaze({ state, mood }) {
       {/* objective marker */}
       {obj && <Objective x={obj.x} y={obj.y} label={obj.label} />}
 
-      {/* avatar at current room */}
-      <g transform={`translate(${NODES[cur].x} ${NODES[cur].y})`}>
+      {/* Glaze avatar — CSS-transitioned translate for corridor walk animation */}
+      <g
+        style={{
+          transform: `translate(${NODES[cur]?.x ?? 160}px, ${NODES[cur]?.y ?? 78}px)`,
+          transition: 'transform 0.9s cubic-bezier(0.34, 1.16, 0.64, 1)'
+        }}
+      >
         <MazeAvatar mood={mood} />
       </g>
     </svg>
@@ -107,7 +142,6 @@ function Hull() {
       <text x="160" y="34" textAnchor="middle" fill="#7a2fd6" fontSize="8" fontWeight="700" letterSpacing="2" opacity="0.8">
         U.S.V. OLD-FASHIONED
       </text>
-      {/* hull rivets */}
       {[[28, 40], [292, 40], [28, 560], [292, 560]].map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r="2.4" fill="#00C8FF" opacity="0.5" />
       ))}
@@ -120,50 +154,86 @@ function Corridor({ d }) {
     <g>
       <path d={d} fill="none" stroke="#2e0f5e" strokeWidth="16" strokeLinecap="round" opacity="0.9" />
       <path d={d} fill="none" stroke="#4B1A8C" strokeWidth="12" strokeLinecap="round" />
-      <path d={d} fill="none" stroke="#00C8FF" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 7" opacity="0.55" />
+      <path d={d} fill="none" stroke="#00C8FF" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 7" opacity="0.5" />
     </g>
   )
 }
 
-function RoomNode({ id, node, isCurrent, visited, state }) {
-  const opacity = visited ? 1 : 0.34
-  const dashed = !visited
+function Door({ x, y, locked, fogged }) {
+  if (fogged) return null
+  if (locked) {
+    return (
+      <g transform={`translate(${x} ${y})`}>
+        {/* glowing red barrier */}
+        <rect x="-22" y="-7" width="44" height="14" rx="3" fill="#ff3b6b" opacity="0.25" filter="url(#soft)" className="animate-flicker" />
+        <rect x="-20" y="-5" width="40" height="10" rx="2" fill="#ff3b6b" opacity="0.7" className="animate-flicker" />
+        <line x1="-18" y1="0" x2="18" y2="0" stroke="#ffb6c8" strokeWidth="1.5" opacity="0.9" />
+        <text y="-12" textAnchor="middle" fill="#ff3b6b" fontSize="7" fontWeight="700" letterSpacing="1">🔒 LOCKED</text>
+      </g>
+    )
+  }
+  // unlocked: open corridor with subtle pulse
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <circle r="12" fill="#00C8FF" opacity="0.12" className="animate-pulseglow" />
+      <rect x="-16" y="-3" width="32" height="6" rx="2" fill="#3ee08a" opacity="0.5" />
+      <text y="-10" textAnchor="middle" fill="#3ee08a" fontSize="7" fontWeight="700" letterSpacing="1" opacity="0.8">UNLOCKED</text>
+    </g>
+  )
+}
+
+function RoomNode({ id, node, isCurrent, isCompleted, fogged, state }) {
+  const opacity = fogged ? 0.2 : isCompleted ? 0.5 : 1
   return (
     <g transform={`translate(${node.x} ${node.y})`} opacity={opacity}>
-      {/* platform ring for current */}
+      {/* current room glow ring */}
       {isCurrent && (
-        <circle r="42" fill="none" stroke="#00C8FF" strokeWidth="2" className="animate-pulseglow" opacity="0.9" />
+        <>
+          <circle r="40" fill="none" stroke="#00C8FF" strokeWidth="2" className="animate-pulseglow" opacity="0.9" />
+          <circle r="38" fill="#15002a" opacity="0.5" />
+        </>
       )}
-      {isCurrent && <circle r="40" fill="#15002a" opacity="0.55" />}
 
-      {/* doughnut room body (hidden face when current — avatar sits here instead) */}
+      {/* room body — hidden when current (avatar sits here instead) */}
       {!isCurrent && (
         <g>
-          <circle r="32" fill="url(#dough)" stroke="#8a5a2a" strokeWidth="2" strokeDasharray={dashed ? '4 4' : 'none'} />
-          <circle r="12" fill="#0A0014" stroke="#8a5a2a" strokeWidth="1.4" strokeDasharray={dashed ? '2 3' : 'none'} />
+          <circle r="30" fill="url(#dough)" stroke="#8a5a2a" strokeWidth="2" strokeDasharray={fogged ? '4 4' : 'none'} />
+          <circle r="11" fill="#0A0014" stroke="#8a5a2a" strokeWidth="1.4" strokeDasharray={fogged ? '2 3' : 'none'} />
           <path
-            d="M-28 -8 Q0 -30 28 -8 Q30 0 22 -2 Q16 8 11 -2 Q5 8 0 -4 Q-6 8 -11 -2 Q-16 8 -22 -2 Q-30 0 -28 -8 Z"
+            d="M-26 -8 Q0 -28 26 -8 Q28 0 20 -2 Q14 8 10 -2 Q4 8 0 -4 Q-6 8 -10 -2 Q-14 8 -20 -2 Q-28 0 -26 -8 Z"
             fill="url(#glaze)"
-            opacity="0.92"
+            opacity="0.9"
           />
+          {/* escape portal special visual */}
+          {id === 'escape_portal' && !fogged && (
+            <circle r="18" fill="url(#portal)" opacity="0.7" className="animate-pulseglow" />
+          )}
         </g>
       )}
 
-      {/* core glyphs in the glazing bay */}
-      {id === 'glazing_bay' && visited && <CoresRack state={state} />}
+      {/* completed checkmark */}
+      {isCompleted && !fogged && (
+        <g transform="translate(22 -22)">
+          <circle r="9" fill="#3ee08a" opacity="0.9" />
+          <path d="M-4 0 L-1 3 L4 -3" stroke="#0A0014" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      )}
+
+      {/* core glyphs in glazing bay */}
+      {id === 'glazing_bay' && !fogged && !isCurrent && <CoresRack state={state} />}
 
       {/* labels */}
-      <text y="52" textAnchor="middle" fill="#FFE9C7" fontSize="11" fontWeight="700" opacity={visited ? 0.95 : 0.5}>
+      <text y="48" textAnchor="middle" fill="#FFE9C7" fontSize="10" fontWeight="700" opacity={fogged ? 0.4 : 0.95}>
         {node.name}
       </text>
-      <text y="64" textAnchor="middle" fill="#7a2fd6" fontSize="7.5" letterSpacing="1.5" opacity={visited ? 0.7 : 0.4}>
+      <text y="59" textAnchor="middle" fill="#7a2fd6" fontSize="7" letterSpacing="1.5" opacity={fogged ? 0.3 : 0.7}>
         {node.sub.toUpperCase()}
       </text>
 
-      {/* unvisited scan tag */}
-      {!visited && (
-        <text y="-44" textAnchor="middle" fill="#00C8FF" fontSize="7" letterSpacing="1.5" opacity="0.55">
-          ◌ UNENTERED
+      {/* fogged tag */}
+      {fogged && (
+        <text y="-38" textAnchor="middle" fill="#7a2fd6" fontSize="6.5" letterSpacing="1.5" opacity="0.5">
+          ◌ UNKNOWN
         </text>
       )}
     </g>
@@ -171,11 +241,11 @@ function RoomNode({ id, node, isCurrent, visited, state }) {
 }
 
 function CoresRack({ state }) {
-  const count = Math.min(state.glazeCores + (state.currentRoom === 'glazing_bay' ? 0 : 0), 3)
+  const count = Math.min(state.glazeCores, 3)
   return (
-    <g transform="translate(-44 -2)">
+    <g transform="translate(-30 -2)">
       {Array.from({ length: 3 }).map((_, i) => (
-        <circle key={i} cx={i * 9} cy="0" r="3.4" fill="url(#coreg)" opacity={i < count ? 0.95 : 0.18} />
+        <circle key={i} cx={i * 8} cy="0" r="3" fill="url(#coreg)" opacity={i < count ? 0.95 : 0.15} />
       ))}
     </g>
   )
@@ -183,28 +253,21 @@ function CoresRack({ state }) {
 
 // ---------------------------------------------------------------------------
 function ChromeStray({ state }) {
-  const inBay = state.currentRoom === 'glazing_bay'
-  const visible = state.currentRoom === 'glazing_bay' || state.strayAwake || state.strayStunned
-  // foreshadow the stray once the bay is discovered
-  const discovered = ORDER.indexOf(state.currentRoom) >= 1
+  const discovered = ROOM_ORDER.indexOf(state.currentRoom) >= 1
   if (!discovered) return null
   const awake = state.strayAwake && !state.strayStunned
   const stunned = state.strayStunned
   const eye = stunned ? '#5a5a6a' : awake ? '#ff3b6b' : '#00C8FF'
-  const op = visible || discovered ? 1 : 0.4
+  const inBay = state.currentRoom === 'glazing_bay'
+  const op = inBay ? 1 : 0.5
   return (
-    <g transform="translate(232 286)" opacity={op}>
-      {/* glow */}
+    <g transform="translate(232 232)" opacity={op}>
       <circle r="16" fill={eye} opacity="0.18" filter="url(#soft)" className={awake ? 'animate-flicker' : ''} />
-      {/* cat head */}
       <ellipse cx="0" cy="2" rx="11" ry="9" fill="#cfd6e4" stroke="#9aa6bd" strokeWidth="1" />
-      {/* ears */}
       <path d="M-9 -4 L-11 -12 L-4 -7 Z" fill="#cfd6e4" stroke="#9aa6bd" strokeWidth="0.8" />
       <path d="M9 -4 L11 -12 L4 -7 Z" fill="#cfd6e4" stroke="#9aa6bd" strokeWidth="0.8" />
-      {/* eyes */}
       <circle cx="-4" cy="1" r="2.2" fill={eye} className={awake ? 'animate-flicker' : ''} />
       <circle cx="4" cy="1" r="2.2" fill={eye} className={awake ? 'animate-flicker' : ''} />
-      {/* status tag */}
       {stunned && <text y="22" textAnchor="middle" fill="#5a5a6a" fontSize="7">✕ stunned</text>}
       {awake && <text y="22" textAnchor="middle" fill="#ff3b6b" fontSize="7">! awake</text>}
       {!awake && !stunned && <text y="22" textAnchor="middle" fill="#00C8FF" fontSize="7" opacity="0.7">z dormant</text>}
@@ -214,23 +277,25 @@ function ChromeStray({ state }) {
 }
 
 function Rift({ state }) {
-  const discovered = ORDER.indexOf(state.currentRoom) >= 2
+  const discovered = ROOM_ORDER.indexOf(state.currentRoom) >= 2
   if (!discovered) return null
   const sealed = state.riftSealed
+  const inMaw = state.currentRoom === 'maw'
+  const op = inMaw ? 1 : 0.5
   return (
-    <g transform="translate(108 462)">
+    <g transform="translate(96 386)" opacity={op}>
       {sealed ? (
         <g>
           <path d="M0 -22 Q-12 0 0 22 Q12 0 0 -22 Z" fill="#1a0238" stroke="#00C8FF" strokeWidth="1.5" opacity="0.8" />
           <path d="M-6 -2 L-2 4 L6 -6" fill="none" stroke="#3ee08a" strokeWidth="2" strokeLinecap="round" />
-          <text y="36" textAnchor="middle" fill="#3ee08a" fontSize="7" opacity="0.8">rift sealed</text>
+          <text y="34" textAnchor="middle" fill="#3ee08a" fontSize="7" opacity="0.8">rift sealed</text>
         </g>
       ) : (
         <g className="animate-flicker">
           <path d="M0 -24 Q-13 0 0 24 Q13 0 0 -24 Z" fill="url(#rift)" opacity="0.9" />
           <path d="M0 -18 Q-8 0 0 18 Q8 0 0 -18 Z" fill="#ffb6c8" opacity="0.7" />
           <circle r="26" fill="#ff3b6b" opacity="0.2" filter="url(#soft)" />
-          <text y="38" textAnchor="middle" fill="#ff3b6b" fontSize="7">RIFT BLEEDING</text>
+          <text y="36" textAnchor="middle" fill="#ff3b6b" fontSize="7">RIFT BLEEDING</text>
         </g>
       )}
     </g>
@@ -238,14 +303,13 @@ function Rift({ state }) {
 }
 
 function Vermious({ state }) {
-  const discovered = ORDER.indexOf(state.currentRoom) >= 2
+  const discovered = ROOM_ORDER.indexOf(state.currentRoom) >= 2
   const fed = state.vermiousFed
-  const op = discovered ? 1 : 0.45
+  const op = discovered ? 1 : 0.3
   const color = fed ? '#3ee08a' : '#FF6FB5'
   return (
-    <g transform="translate(160 552)" opacity={op}>
+    <g transform="translate(160 470)" opacity={op}>
       <g className={fed ? '' : 'animate-flicker'}>
-        {/* coiled body */}
         <path
           d="M-34 6 Q-20 -10 -6 6 Q8 22 22 6 Q34 -8 22 -10"
           fill="none"
@@ -254,10 +318,8 @@ function Vermious({ state }) {
           strokeLinecap="round"
           opacity="0.85"
         />
-        {/* head */}
         <circle cx="22" cy="-10" r="6" fill={color} opacity="0.9" />
         <circle cx="24" cy="-12" r="1.4" fill="#0A0014" />
-        {/* glow */}
         <circle cx="0" cy="0" r="22" fill={color} opacity="0.14" filter="url(#soft)" />
       </g>
       <text y="26" textAnchor="middle" fill={color} fontSize="7" opacity="0.85">
@@ -281,19 +343,17 @@ function Objective({ x, y, label }) {
 }
 
 // ---------------------------------------------------------------------------
-// Compact mood-reactive Glaze avatar drawn natively in SVG (aligned with maze).
+// Compact mood-reactive Glaze avatar (native SVG, animates via parent transform).
 function MazeAvatar({ mood }) {
   return (
     <g>
       <circle r="20" fill="#00C8FF" opacity="0.16" filter="url(#soft)" className="animate-pulseglow" />
-      {/* doughnut body */}
       <circle r="15" fill="url(#dough)" stroke="#8a5a2a" strokeWidth="1.4" />
       <circle r="5.5" fill="#0A0014" stroke="#8a5a2a" strokeWidth="1" />
       <path
         d="M-13 -4 Q0 -14 13 -4 Q14 0 10 -1 Q7 4 5 -1 Q2 4 0 -2 Q-2 4 -5 -1 Q-7 4 -10 -1 Q-14 0 -13 -4 Z"
         fill="url(#glaze)"
       />
-      {/* captain's hat */}
       <path d="M-9 -11 Q0 -19 9 -11 L8 -9 L-8 -9 Z" fill="#1a0238" stroke="#00C8FF" strokeWidth="0.8" />
       <circle cx="0" cy="-17" r="1.6" fill="#FFC857" />
       {Eyes(mood)}
@@ -312,9 +372,7 @@ function Eyes(mood) {
     Emboldened: <g fill="#1a0238"><circle cx="-5" cy="-1" r="1.8" /><circle cx="5" cy="-1" r="1.8" /></g>,
     Anxious: <g fill="#1a0238"><circle cx="-5" cy="-1" r="2" /><circle cx="5" cy="-1" r="2" /></g>
   }
-  return s[mood] || s.Guarded || (
-    <g fill="#1a0238"><circle cx="-5" cy="-1" r="1.7" /><circle cx="5" cy="-1" r="1.7" /></g>
-  )
+  return s[mood] || <g fill="#1a0238"><circle cx="-5" cy="-1" r="1.7" /><circle cx="5" cy="-1" r="1.7" /></g>
 }
 
 function Mouth(mood) {
@@ -345,6 +403,3 @@ function Starfield() {
   }
   return <g>{stars}</g>
 }
-
-// re-export for any external use
-export { ROOMS }

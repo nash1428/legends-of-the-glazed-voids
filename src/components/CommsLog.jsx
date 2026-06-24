@@ -6,7 +6,8 @@ const VERDICT_CHIP = {
   [VERDICT.COMPLY]: 'border-ok/50 text-ok',
   [VERDICT.COMPLY_RELUCTANT]: 'border-glaze-gold/50 text-glaze-gold',
   [VERDICT.COUNTEROFFER]: 'border-warn/50 text-warn',
-  [VERDICT.REFUSE]: 'border-danger/50 text-danger'
+  [VERDICT.REFUSE]: 'border-danger/50 text-danger',
+  UNCLEAR: 'border-violet-glaze/40 text-glaze-cream/50'
 }
 
 export default function CommsLog() {

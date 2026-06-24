@@ -61,9 +61,9 @@ const FLAG_LINES = {
 }
 
 const SUCCESS_LINES = {
-  move_to_hatch: [
+  move_to_next_room: [
     "Fine. FINE. The Captain will walk. Four steps. I expect a medal. Possibly a parade.",
-    "Ugh — moving. If I pull a strut, you're paying for it. Hatch it is. Try not to sound so smug."
+    "Ugh — moving. If I pull a strut, you're paying for it. Next room it is. Try not to sound so smug."
   ],
   grab_core: [
     "I did it. I touched it. The Captain has the Glaze Core — and, ah, pocketed a Void Cruller too, because Captains delegate to their hips. Don't judge.",
@@ -117,6 +117,11 @@ const HEDGE = [
   "Ugh, my struts are lifting but my nerve isn't. I'm at 90% coward, 10% hero. Tip the scales, Cruller.",
   "Nearly! I had one foot out and then the foot got scared. Reassure me harder — or bribe me — and we're golden."
 ]
+const UNCLEAR = [
+  "I... didn't catch that, Cruller. Was that an order? A compliment? A cruller recipe? Speak plainly — what do you want the Captain to DO?",
+  "Come again? The Captain's audio processor is full of doughnut crumbs. Tell me what you need — move? grab? seal? feed? — and maybe I'll listen.",
+  "You're mumbling, operator. Use your words. What's the mission? What am I doing here, besides being magnificent and confused?"
+]
 
 function strayFlavor(state) {
   if (state.currentRoom !== 'glazing_bay') return null
@@ -141,6 +146,9 @@ function templateActor(state, result) {
     const f = events.flagged[0]
     return pick(FLAG_LINES[f] || FLAG_LINES.meta, seed)
   }
+
+  // Unclassifiable input -> ask for clarification (costs a turn, no state change)
+  if (events.unclear) return pick(UNCLEAR, seed)
 
   // Endings
   if (ending && ENDING_LINES[ending]) return ENDING_LINES[ending]
@@ -186,11 +194,13 @@ function buildActorContext(state, result) {
   if (result.events?.trickBelieved) bits.push('TRICK_BELIEVED (you fell for it, mildly embarrassed)')
   if (result.events?.emptyPromise) bits.push('EMPTY_BRIBE (player offered a bribe they do not have)')
   if (result.events?.alreadyDone) bits.push('ALREADY_DONE (player asked for an action that is already completed; note it and move on)')
+  if (result.events?.unclear) bits.push('UNCLEAR_INPUT (you did not understand what the player wants — ask them to clarify what action they want)')
   if (result.progress?.riftSealed) bits.push('YOU JUST SEALED THE RIFT (cost a Glaze Core)')
   if (result.progress?.vermiousFed) bits.push('YOU JUST FED VERMIOUS -> PORTAL OPEN')
   if (result.progress?.transmute) bits.push('YOU JUST TRANSMUTED A CORE INTO A CRULLER')
   if (result.progress?.strayStunned) bits.push('YOU JUST STUNNED THE CHROME STRAY')
   if (result.progress?.nextRoom) bits.push(`YOU_MOVED_TO: ${ROOMS[result.progress.nextRoom]?.name}`)
+  if (result.state?.currentRoom === 'escape_portal') bits.push('YOU REACHED THE ESCAPE PORTAL — freedom')
   if (!result.success && (result.verdict === 'COMPLY' || result.verdict === 'COMPLY_RELUCTANT'))
     bits.push('NEAR_MISS (you are warming up but did NOT complete the action yet — hesitate and demand one more push)')
   return (

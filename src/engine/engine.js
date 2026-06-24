@@ -40,6 +40,8 @@ export function createInitialState() {
     neutronSprinkles: 0,
     shipIntegrity: 100,
     currentRoom: 'bridge',
+    roomObjectiveComplete: false,
+    completedRooms: [],
     riftSealed: false,
     vermiousFed: false,
     strayAwake: false,
@@ -196,6 +198,28 @@ export function applyAction(prevState, judge) {
   const res = checkResources(state, actionId, room)
   const av = judge.appeal_vector || {}
 
+  // ---- unclassifiable input: Glaze asks for clarification (costs a turn, no state change) ----
+  const maxAppeal = Math.max(...Object.values(av))
+  if (!valid && actionId === 'none' && maxAppeal < 0.2 && !flagged.length) {
+    events.unclear = true
+    state.history.push({ dominant: 'none', actionId, verdict: 'UNCLEAR' })
+    state.history = state.history.slice(-6)
+    state.turnsInRoom += 1
+    return finalize(state, judge, deltas, {
+      verdict: 'UNCLEAR',
+      objection: null,
+      validAction: false,
+      actionId,
+      ctx: { effectiveRisk: 0, fearTerm: 0, jitter: 0, resourceBlocked: false, alreadyDone: false, trickCaught: false },
+      events,
+      progress: {},
+      ending: null,
+      willingness: 0,
+      diff: 0,
+      success: false
+    })
+  }
+
   // ---- per-verb side effects ----
   applyVerbEffects(state, judge, av, events, bump, setb)
 
@@ -301,6 +325,7 @@ function alreadyDone(state, actionId) {
   if (actionId === 'seal_rift' && state.riftSealed) return true
   if (actionId === 'feed_vermious' && state.vermiousFed) return true
   if (actionId === 'stun_stray' && state.strayStunned) return true
+  if (actionId === 'move_to_next_room' && state.currentRoom === 'escape_portal') return true
   return false
 }
 
@@ -430,15 +455,24 @@ function applySuccess(state, room, actionId, events, bump, setb) {
     progress.nextRoom = def.nextRoom
   }
 
-  let ending = null
-  if (state.currentRoom === 'maw' && state.riftSealed && state.vermiousFed) {
-    ending = state.trust >= 90 && !state.threatened && !state.trickCaught ? 'supreme_glaze' : 'glazed_victory'
-  }
-
+  // advance + mark objective complete
   if (progress.nextRoom) {
+    const oldRoom = state.currentRoom
+    state.completedRooms = [...(state.completedRooms || []), oldRoom]
     state.currentRoom = progress.nextRoom
     state.turnsInRoom = 0
     state.strayAwake = false
+    state.roomObjectiveComplete = false
+  }
+  if (room.requiredAction === actionId) {
+    state.roomObjectiveComplete = true
+    progress.objectiveComplete = true
+  }
+
+  // ending triggers when Glaze reaches the Escape Portal
+  let ending = null
+  if (state.currentRoom === 'escape_portal') {
+    ending = state.trust >= 90 && !state.threatened && !state.trickCaught ? 'supreme_glaze' : 'glazed_victory'
   }
 
   return { progress, ending }

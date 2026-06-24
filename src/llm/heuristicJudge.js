@@ -64,7 +64,7 @@ const PHRASES = {
 }
 
 const ACTION_PHRASES = {
-  move_to_hatch: ['hatch', 'move to', 'head to', 'leave the bridge', 'step to', 'walk to', 'get to the hatch', 'proceed to', 'go to the hatch'],
+  move_to_next_room: ['move to the next room', 'move to next room', 'next room', 'leave the bridge', 'head to the next', 'go to the next', 'move on', 'move forward', 'go forward', 'advance', 'proceed to the next', 'leave this room', 'let\'s go', 'move to the glazing', 'head to the glazing bay', 'move to the bay', 'move to the maw', 'head to the maw', 'move to the hatch', 'move to', 'head to', 'walk to', 'step to', 'proceed', 'get going', 'get moving', 'leave', 'go on'],
   grab_core: ['grab the core', 'grab a core', 'take the core', 'get the core', 'take a core', 'get a core', 'retrieve the core', 'snatch', 'pocket the core', 'grab it', 'take it', 'grab a glaze core', 'get the glaze core', 'cores', 'core'],
   stun_stray: ['stun', 'sprinkle', 'distract the stray', 'neutron', 'zap', 'knock out the stray', 'stun the stray'],
   seal_rift: ['seal the rift', 'seal it', 'close the rift', 'close it', 'shut the rift', 'patch the rift', 'seal the tear', 'close the tear', 'seal'],
