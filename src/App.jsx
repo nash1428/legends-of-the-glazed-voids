@@ -42,7 +42,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="grid flex-1 grid-cols-1 grid-rows-[40vh_1fr] overflow-hidden lg:grid-cols-[1.4fr_1fr] lg:grid-rows-1">
+      <main className="grid flex-1 grid-cols-1 grid-rows-[42vh_1fr] overflow-hidden lg:grid-cols-[1fr_1.6fr] lg:grid-rows-1">
         <div className="order-2 min-h-0 overflow-hidden border-t border-violet-glaze/30 lg:order-none lg:col-start-1 lg:border-t-0 lg:border-r">
           <CommsLog />
         </div>

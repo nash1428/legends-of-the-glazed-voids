@@ -12,8 +12,8 @@ export const W = {
   threat: 26,
   fearK: 0.42,
   annoyK: 0.55,
-  suspK: 0.7,
-  resK: 0.55,
+  suspK: 0.5,
+  resK: 0.5,
   heroMax: 16
 }
 

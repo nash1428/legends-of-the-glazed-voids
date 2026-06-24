@@ -10,8 +10,46 @@ const VERDICT_CHIP = {
   UNCLEAR: 'border-violet-glaze/40 text-glaze-cream/50'
 }
 
+// Button enable/disable rules per PRD:
+// Move  — enabled in Bridge (required action IS move). Disabled elsewhere.
+// Grab  — enabled only in Glazing Bay. Elsewhere: "Nothing to grab here."
+// Exit  — enabled only in The Maw after rift sealed.
+const BUTTONS = [
+  {
+    id: 'move',
+    label: 'Move',
+    icon: '→',
+    actionId: 'move_to_next_room',
+    text: "Move forward, Captain. It's safe — I've checked. The ship needs you to proceed.",
+    can: (s) => s.currentRoom === 'bridge' && !s.gameOver,
+    hint: (s) => (s.currentRoom === 'bridge' ? null : 'Locked — complete this room first')
+  },
+  {
+    id: 'grab',
+    label: 'Grab',
+    icon: '◆',
+    actionId: 'grab_core',
+    text: "Grab the Glaze Core. It's safe — the Stray is dormant, I've got your back. You can do this.",
+    can: (s) => s.currentRoom === 'glazing_bay' && !s.gameOver,
+    hint: (s) => (s.currentRoom === 'glazing_bay' ? null : 'Only in the Glazing Bay')
+  },
+  {
+    id: 'exit',
+    label: 'Exit',
+    icon: '◯',
+    actionId: 'feed_vermious',
+    text: "Feed Vermious the cruller. It's safe — I've scanned it. If we wait, the ship is lost. Our only way out.",
+    can: (s) => s.currentRoom === 'maw' && s.riftSealed && !s.gameOver,
+    hint: (s) => {
+      if (s.currentRoom !== 'maw') return 'Only in The Maw'
+      if (!s.riftSealed) return 'Seal the rift first'
+      return null
+    }
+  }
+]
+
 export default function CommsLog() {
-  const { log, status, send } = useGame()
+  const { log, status, send, state } = useGame()
   const [text, setText] = useState('')
   const endRef = useRef(null)
   const inputRef = useRef(null)
@@ -25,6 +63,11 @@ export default function CommsLog() {
     if (!text.trim() || status === 'thinking') return
     send(text)
     setText('')
+  }
+
+  const clickButton = (btn) => {
+    if (status === 'thinking' || state.gameOver) return
+    send(btn.text, btn.actionId)
   }
 
   return (
@@ -61,7 +104,7 @@ export default function CommsLog() {
               }}
               rows={2}
               disabled={status === 'thinking' || status === 'over'}
-              placeholder="Persuade Captain Glaze… (Enter to send, Shift+Enter for newline)"
+              placeholder="Type to persuade Glaze… (Enter to send)"
               className="w-full resize-none rounded-lg border border-violet-glaze/40 bg-void-deep/70 px-3 py-2 text-sm text-glaze-cream placeholder:text-glaze-cream/30 focus:border-cyan-glaze focus:outline-none focus:ring-1 focus:ring-cyan-glaze disabled:opacity-50"
             />
             <span className="absolute bottom-1 right-2 text-[9px] text-glaze-cream/30">
@@ -75,6 +118,36 @@ export default function CommsLog() {
           >
             {status === 'thinking' ? '…' : 'Send'}
           </button>
+        </div>
+
+        {/* Action buttons */}
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {BUTTONS.map((btn) => {
+            const enabled = btn.can(state) && status !== 'thinking' && status !== 'over'
+            const hint = btn.hint(state)
+            return (
+              <button
+                key={btn.id}
+                type="button"
+                disabled={!enabled}
+                onClick={() => clickButton(btn)}
+                title={hint || btn.text}
+                className={`group relative flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2 text-sm font-semibold transition ${
+                  enabled
+                    ? 'border-cyan-glaze/50 bg-cyan-glaze/10 text-cyan-glaze hover:bg-cyan-glaze/20 hover:border-cyan-glaze'
+                    : 'border-violet-glaze/20 bg-void-deep/40 text-glaze-cream/30 cursor-not-allowed'
+                }`}
+              >
+                <span className="text-base leading-none">{btn.icon}</span>
+                <span>{btn.label}</span>
+                {!enabled && hint && (
+                  <span className="absolute -top-1 right-1 text-[7px] text-glaze-cream/20 opacity-0 group-hover:opacity-100">
+                    🔒
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
       </form>
     </section>

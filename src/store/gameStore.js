@@ -20,6 +20,7 @@ export const useGame = create((set, get) => ({
   log: [
     { role: 'system', text: 'U.S.V. OLD-FASHIONED · COMMS UPLINK ESTABLISHED', turn: 0 },
     { role: 'system', text: 'You are CRLR-9 "Cruller" — a voice from HQ, "The Bakery".', turn: 0 },
+    { role: 'system', text: 'GOAL: Persuade Captain Glaze to move through the ship and escape. Use the Move / Grab / Exit buttons or type your own words. Flatter, reassure, or bribe to raise his willingness.', turn: 0 },
     { role: 'glaze', text: roomIntroLine('bridge'), turn: 0, mood: computeMood(createInitialState()) }
   ],
   status: 'idle', // 'idle' | 'thinking' | 'over'
@@ -37,12 +38,13 @@ export const useGame = create((set, get) => ({
       error: null,
       log: [
         { role: 'system', text: 'U.S.V. OLD-FASHIONED · COMMS UPLINK RE-ESTABLISHED', turn: 0 },
+        { role: 'system', text: 'GOAL: Persuade Captain Glaze to move through the ship and escape. Use the Move / Grab / Exit buttons or type your own words.', turn: 0 },
         { role: 'glaze', text: roomIntroLine('bridge'), turn: 0, mood: computeMood(fresh) }
       ]
     })
   },
 
-  send: async (rawText) => {
+  send: async (rawText, actionHint) => {
     const { status, state, log } = get()
     if (status === 'thinking' || state.gameOver) return
     const text = (rawText || '').trim().slice(0, MAX_INPUT)
@@ -58,6 +60,8 @@ export const useGame = create((set, get) => ({
     try {
       // 1. Judge
       const judge = await judgeText(text, get().state)
+      // Override action_id when a button forced it
+      if (actionHint) judge.action_id = actionHint
       // 2. Engine owns truth
       const result = applyAction(get().state, judge)
       // 3. Actor narrates (only what the engine decided)

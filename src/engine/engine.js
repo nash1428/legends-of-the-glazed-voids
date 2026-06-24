@@ -25,8 +25,8 @@ const VERDICT_RANK = {
 export function createInitialState() {
   return {
     // live gauges
-    composure: 40,
-    trust: 50,
+    composure: 50,
+    trust: 55,
     ego: 55,
     hunger: 50,
     // hidden counters
@@ -35,8 +35,8 @@ export function createInitialState() {
     annoyance: 0,
     askPrice: 0,
     // world
-    glazeCores: 1,
-    voidCrullers: 0,
+    glazeCores: 2,
+    voidCrullers: 1,
     neutronSprinkles: 0,
     shipIntegrity: 100,
     currentRoom: 'bridge',
@@ -346,7 +346,7 @@ function applyVerbEffects(state, judge, av, events, bump, setb) {
   if (av.flatter > 0.3) {
     const recentFlatter = state.history.filter((h) => h.dominant === 'flatter').length
     bump('ego', clamp(8 - recentFlatter * 3, 2, 8))
-    if (recentFlatter >= 1) bump('suspicion', +5)
+    if (recentFlatter >= 1) bump('suspicion', +3)
   }
   // Bribe
   if (av.bribe > 0.35) {
