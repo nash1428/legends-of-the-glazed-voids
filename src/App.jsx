@@ -4,6 +4,7 @@ import { llmAvailable } from './llm/client.js'
 import CommsLog from './components/CommsLog.jsx'
 import ShipPanel from './components/ShipPanel.jsx'
 import EndingScreen from './components/EndingScreen.jsx'
+import MusicPlayer from './components/MusicPlayer.jsx'
 
 export default function App() {
   const { state, reset } = useGame()
@@ -36,6 +37,7 @@ export default function App() {
           >
             {llmAvailable() ? '● Live LLM' : '● Heuristic Mode'}
           </span>
+          <MusicPlayer />
           <button onClick={reset} className="btn border border-violet-glaze/40 bg-violet-deep/40 text-glaze-cream hover:bg-violet-deep/70">
             New Run
           </button>

@@ -25,8 +25,8 @@ const VERDICT_RANK = {
 export function createInitialState() {
   return {
     // live gauges
-    composure: 50,
-    trust: 55,
+    composure: 55,
+    trust: 60,
     ego: 55,
     hunger: 50,
     // hidden counters
@@ -37,7 +37,9 @@ export function createInitialState() {
     // world
     glazeCores: 2,
     voidCrullers: 1,
-    neutronSprinkles: 0,
+    neutronSprinkles: 1,
+    raspberrySingularity: 0,
+    forbiddenDoughnut: 0,
     shipIntegrity: 100,
     currentRoom: 'bridge',
     roomObjectiveComplete: false,
@@ -46,6 +48,7 @@ export function createInitialState() {
     vermiousFed: false,
     strayAwake: false,
     strayStunned: false,
+    sideSearched: {}, // { roomId: true } for searched side passages
     trickCaught: false, // hidden flag -> blocks Supreme Glaze
     threatened: false, // hidden flag -> blocks Supreme Glaze
     turnsInRoom: 0,
@@ -223,6 +226,95 @@ export function applyAction(prevState, judge) {
   // ---- per-verb side effects ----
   applyVerbEffects(state, judge, av, events, bump, setb)
 
+  // ---- special: search side passage (always succeeds, not gated by willingness) ----
+  if (valid && actionId === 'search_side' && room.sidePassage) {
+    const sp = room.sidePassage
+    const already = state.sideSearched?.[state.currentRoom]
+    if (already) {
+      events.alreadyDone = true
+      state.history.push({ dominant: dominantAppeal(av), actionId, verdict: 'COUNTEROFFER' })
+      state.history = state.history.slice(-6)
+      state.turnsInRoom += 1
+      return finalize(state, judge, deltas, {
+        verdict: 'COUNTEROFFER',
+        objection: 'RESOURCE',
+        validAction: true,
+        actionId,
+        ctx: { effectiveRisk: 0, fearTerm: 0, jitter: 0, resourceBlocked: false, alreadyDone: true, trickCaught: false },
+        events,
+        progress: {},
+        ending: null,
+        willingness: THRESHOLD,
+        diff: 0,
+        success: false
+      })
+    }
+    // grant the side item
+    state.sideSearched = { ...(state.sideSearched || {}), [state.currentRoom]: true }
+    bump(sp.item, +1)
+    events.sidePickup = { item: sp.item, label: sp.itemLabel }
+    state.history.push({ dominant: dominantAppeal(av), actionId, verdict: 'COMPLY' })
+    state.history = state.history.slice(-6)
+    state.turnsInRoom += 1
+    return finalize(state, judge, deltas, {
+      verdict: 'COMPLY',
+      objection: null,
+      validAction: true,
+      actionId,
+      ctx: { effectiveRisk: 0, fearTerm: 0, jitter: 0, resourceBlocked: false, alreadyDone: false, trickCaught: false },
+      events,
+      progress: { sidePickup: sp.item },
+      ending: null,
+      willingness: THRESHOLD + 20,
+      diff: 20,
+      success: true
+    })
+  }
+
+  // ---- special: craft Void Cruller (always succeeds if resources available) ----
+  if (valid && actionId === 'craft_cruller' && room.actions?.craft_cruller?.craft) {
+    const canCraft = state.glazeCores >= 2 && state.neutronSprinkles >= 1
+    if (!canCraft) {
+      events.resourceBlocked = true
+      state.history.push({ dominant: dominantAppeal(av), actionId, verdict: 'COUNTEROFFER' })
+      state.history = state.history.slice(-6)
+      state.turnsInRoom += 1
+      return finalize(state, judge, deltas, {
+        verdict: 'COUNTEROFFER',
+        objection: 'RESOURCE',
+        validAction: true,
+        actionId,
+        ctx: { effectiveRisk: 0, fearTerm: 0, jitter: 0, resourceBlocked: true, alreadyDone: false, trickCaught: false },
+        events,
+        progress: {},
+        ending: null,
+        willingness: THRESHOLD - 10,
+        diff: -10,
+        success: false
+      })
+    }
+    bump('glazeCores', -2)
+    bump('neutronSprinkles', -1)
+    bump('voidCrullers', +1)
+    events.crafted = true
+    state.history.push({ dominant: dominantAppeal(av), actionId, verdict: 'COMPLY' })
+    state.history = state.history.slice(-6)
+    state.turnsInRoom += 1
+    return finalize(state, judge, deltas, {
+      verdict: 'COMPLY',
+      objection: null,
+      validAction: true,
+      actionId,
+      ctx: { effectiveRisk: 0, fearTerm: 0, jitter: 0, resourceBlocked: false, alreadyDone: false, trickCaught: false },
+      events,
+      progress: { crafted: true },
+      ending: null,
+      willingness: THRESHOLD + 20,
+      diff: 20,
+      success: true
+    })
+  }
+
   // ---- effective risk + fear term ----
   const effRisk = effectiveRisk(state, actionId)
   let fearTerm = effRisk * (1 - state.composure / 100) * W.fearK
@@ -326,6 +418,7 @@ function alreadyDone(state, actionId) {
   if (actionId === 'feed_vermious' && state.vermiousFed) return true
   if (actionId === 'stun_stray' && state.strayStunned) return true
   if (actionId === 'move_to_next_room' && state.currentRoom === 'escape_portal') return true
+  if (actionId === 'search_side' && state.sideSearched?.[state.currentRoom]) return true
   return false
 }
 
@@ -334,6 +427,7 @@ function checkResources(state, actionId, room) {
   if (!def) return { blocked: false }
   if (def.needsCore && state.glazeCores < 1) return { blocked: true, reason: 'core' }
   if (def.needsCruller && state.voidCrullers < 1) return { blocked: true, reason: 'cruller' }
+  if (def.needsRiftSealed && !state.riftSealed) return { blocked: true, reason: 'rift' }
   if (def.consumeSprinkle && state.neutronSprinkles < 1) return { blocked: true, reason: 'sprinkle' }
   return { blocked: false }
 }
@@ -426,10 +520,6 @@ function applySuccess(state, room, actionId, events, bump, setb) {
       setb('riftSealed')
       progress.riftSealed = true
     }
-    if (actionId === 'transmute') {
-      bump('voidCrullers', +1)
-      progress.transmute = true
-    }
   }
   if (def.needsCruller) {
     bump('voidCrullers', -1)
@@ -445,11 +535,6 @@ function applySuccess(state, room, actionId, events, bump, setb) {
   if (actionId === 'grab_core') {
     bump('glazeCores', +1)
     progress.grabCore = true
-    if (!events.trickBelieved) {
-      // strong, honest play pockets a bonus Void Cruller
-      bump('voidCrullers', +1)
-      progress.bonusCruller = true
-    }
     progress.nextRoom = def.nextRoom
   } else if (def.nextRoom) {
     progress.nextRoom = def.nextRoom
@@ -490,7 +575,7 @@ function applyFailure(state, room, actionId, verdict, events, bump, setb) {
       }
     }
   }
-  if (state.currentRoom === 'maw' && !state.riftSealed && actionId === 'seal_rift') {
+  if ((state.currentRoom === 'maw' || state.currentRoom === 'final_conduit') && !state.riftSealed && actionId === 'seal_rift') {
     bump('composure', -4)
   }
 }
@@ -499,9 +584,13 @@ function applyFailure(state, room, actionId, verdict, events, bump, setb) {
 // Ambient damage.
 // ---------------------------------------------------------------------------
 function applyAmbientDamage(state, bump) {
-  if (state.currentRoom === 'maw' && !state.riftSealed) bump('shipIntegrity', -6)
+  // rift drains while in the Maw or Final Conduit and unsealed
+  if ((state.currentRoom === 'maw' || state.currentRoom === 'final_conduit') && !state.riftSealed) bump('shipIntegrity', -6)
+  // east shaft ambient rift energy
+  if (state.currentRoom === 'east_shaft') bump('shipIntegrity', -2)
   if (state.currentRoom === 'glazing_bay' && state.strayAwake && !state.strayStunned) bump('shipIntegrity', -6)
-  if (state.currentRoom === 'maw' && state.riftSealed && !state.vermiousFed && state.turnsInRoom > 3) {
+  // Vermious rampages if rift sealed but not fed and player stalls in Final Conduit
+  if (state.currentRoom === 'final_conduit' && state.riftSealed && !state.vermiousFed && state.turnsInRoom > 3) {
     bump('shipIntegrity', -12)
   }
   return null
@@ -518,13 +607,13 @@ function checkLosses(state) {
 // ---------------------------------------------------------------------------
 function updateAnnoyance(state, judge) {
   const recent = state.history.slice(-3)
-  let a = state.annoyance * 0.6
+  let a = state.annoyance * 0.5
   const dom = dominantAppeal(judge.appeal_vector || {})
   const cmds = recent.filter((h) => h.dominant === 'command').length + (dom === 'command' ? 1 : 0)
-  a += cmds * 16
+  a += cmds * 10
   if (recent.length >= 1) {
     const last = recent[recent.length - 1]?.dominant
-    if (last && last === dom && dom !== 'none') a += 18
+    if (last && last === dom && dom !== 'none' && dom !== 'reassure') a += 12
   }
   if (judge.tone === 'rude') a += 22
   if (judge.tone === 'manipulative') a += 10
@@ -560,6 +649,8 @@ function blankDeltas() {
     glazeCores: 0,
     voidCrullers: 0,
     neutronSprinkles: 0,
+    raspberrySingularity: 0,
+    forbiddenDoughnut: 0,
     riftSealed: 0,
     vermiousFed: 0,
     strayAwake: 0,

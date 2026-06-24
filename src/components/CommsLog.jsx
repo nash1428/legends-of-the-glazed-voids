@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useGame, MAX_INPUT } from '../store/gameStore.js'
 import { VERDICT } from '../engine/constants.js'
+import { ROOMS } from '../engine/rooms.js'
 
 const VERDICT_CHIP = {
   [VERDICT.COMPLY]: 'border-ok/50 text-ok',
@@ -20,9 +21,9 @@ const BUTTONS = [
     label: 'Move',
     icon: '→',
     actionId: 'move_to_next_room',
-    text: "Move forward, Captain. It's safe — I've checked. The ship needs you to proceed.",
-    can: (s) => s.currentRoom === 'bridge' && !s.gameOver,
-    hint: (s) => (s.currentRoom === 'bridge' ? null : 'Locked — complete this room first')
+    text: "It's safe, Captain — I've checked. Move forward. The ship needs you to proceed.",
+    can: (s) => s.currentRoom !== 'escape_portal' && ROOMS[s.currentRoom]?.requiredAction === 'move_to_next_room' && !s.gameOver,
+    hint: (s) => (s.currentRoom === 'escape_portal' ? 'Already escaped!' : ROOMS[s.currentRoom]?.requiredAction === 'move_to_next_room' ? null : 'Complete this room first')
   },
   {
     id: 'grab',
@@ -39,10 +40,37 @@ const BUTTONS = [
     icon: '◯',
     actionId: 'feed_vermious',
     text: "Feed Vermious the cruller. It's safe — I've scanned it. If we wait, the ship is lost. Our only way out.",
-    can: (s) => s.currentRoom === 'maw' && s.riftSealed && !s.gameOver,
+    can: (s) => s.currentRoom === 'final_conduit' && s.voidCrullers >= 1 && !s.gameOver,
     hint: (s) => {
-      if (s.currentRoom !== 'maw') return 'Only in The Maw'
-      if (!s.riftSealed) return 'Seal the rift first'
+      if (s.currentRoom !== 'final_conduit') return 'Only in Final Conduit'
+      if (s.voidCrullers < 1) return 'Need a Void Cruller'
+      return null
+    }
+  },
+  {
+    id: 'search',
+    label: 'Search',
+    icon: '?',
+    actionId: 'search_side',
+    text: "Search the side passage, Captain. There might be something useful.",
+    can: (s) => ROOMS[s.currentRoom]?.sidePassage && !s.sideSearched?.[s.currentRoom] && !s.gameOver,
+    hint: (s) => {
+      if (!ROOMS[s.currentRoom]?.sidePassage) return 'No side passage here'
+      if (s.sideSearched?.[s.currentRoom]) return 'Already searched'
+      return null
+    }
+  },
+  {
+    id: 'craft',
+    label: 'Craft',
+    icon: '⊕',
+    actionId: 'craft_cruller',
+    text: "Craft a Void Cruller at the pastry station. 2 Cores + 1 Sprinkle.",
+    can: (s) => s.currentRoom === 'maw' && s.glazeCores >= 2 && s.neutronSprinkles >= 1 && !s.gameOver,
+    hint: (s) => {
+      if (s.currentRoom !== 'maw') return 'Only at The Maw pastry station'
+      if (s.glazeCores < 2) return 'Need 2 Glaze Cores'
+      if (s.neutronSprinkles < 1) return 'Need 1 Neutron Sprinkle'
       return null
     }
   }
@@ -121,7 +149,7 @@ export default function CommsLog() {
         </div>
 
         {/* Action buttons */}
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-5 gap-1.5">
           {BUTTONS.map((btn) => {
             const enabled = btn.can(state) && status !== 'thinking' && status !== 'over'
             const hint = btn.hint(state)
@@ -132,19 +160,14 @@ export default function CommsLog() {
                 disabled={!enabled}
                 onClick={() => clickButton(btn)}
                 title={hint || btn.text}
-                className={`group relative flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2 text-sm font-semibold transition ${
+                className={`group relative flex flex-col items-center gap-0.5 rounded-lg border px-1 py-1.5 text-xs font-semibold transition ${
                   enabled
                     ? 'border-cyan-glaze/50 bg-cyan-glaze/10 text-cyan-glaze hover:bg-cyan-glaze/20 hover:border-cyan-glaze'
                     : 'border-violet-glaze/20 bg-void-deep/40 text-glaze-cream/30 cursor-not-allowed'
                 }`}
               >
-                <span className="text-base leading-none">{btn.icon}</span>
+                <span className="text-sm leading-none">{btn.icon}</span>
                 <span>{btn.label}</span>
-                {!enabled && hint && (
-                  <span className="absolute -top-1 right-1 text-[7px] text-glaze-cream/20 opacity-0 group-hover:opacity-100">
-                    🔒
-                  </span>
-                )}
               </button>
             )
           })}

@@ -36,8 +36,8 @@ const OBJECTION_LINES = {
     "Mmhm. 'Just go over there,' you say, while oozing scheme. Back off the games, Cruller — talk plain, or I shut like a donut box."
   ],
   RESOURCE: [
-    "With WHAT? I haven't got the goods for that. Bring me a Glaze Core — or forge a Cruller at the fryer — then we'll talk. The Captain can't pay a price he doesn't have.",
-    "Resources, Cruller. Resources. I can't seal a rift on charm alone. Find me a Core, or this conversation is half-baked."
+    "With WHAT? I haven't got the goods for that. Bring me resources, or craft what we need at the pastry station. The Captain can't pay a price he doesn't have.",
+    "Resources, Cruller. Resources. I can't do this on charm alone. Find me what we need, or this conversation is half-baked."
   ]
 }
 
@@ -66,24 +66,28 @@ const SUCCESS_LINES = {
     "Ugh — moving. If I pull a strut, you're paying for it. Next room it is. Try not to sound so smug."
   ],
   grab_core: [
-    "I did it. I touched it. The Captain has the Glaze Core — and, ah, pocketed a Void Cruller too, because Captains delegate to their hips. Don't judge.",
-    "Got it. Core in hand, Cruller in pocket, dignity... mostly intact. The Stray didn't even stir. I am, frankly, majestic."
+    "I did it. I touched it. The Captain has the Glaze Core. The Stray didn't even stir. I am, frankly, majestic.",
+    "Got it. Core in hand, dignity... mostly intact. Let's move before anything with teeth wakes up."
   ],
   seal_rift: [
-    "Sealed. Cost me a Glaze Core — do you know what a Core costs? My dignity, Cruller. It costs my dignity. But the rift's quiet now.",
+    "Sealed. Cost me a Glaze Core — do you know what a Core costs? My dignity, Cruller. But the rift's quiet now.",
     "Rift: sealed. I pressed the thing, it went zap, the static stopped. You may applaud. The Captain accepts applause and cash."
   ],
   feed_vermious: [
-    "I fed the pastry god. It burped frosting. We... we live. The portal's open — let's GO, Cruller, before it wants dessert!",
-    "Cruller to Vermious, down the hatch. The thing purred. Portals open. I am never doing that again. (I will absolutely take the credit.)"
-  ],
-  transmute: [
-    "Fryer's on. One Core becomes one Cruller. Alchemy, Cruller — the Captain does alchemy now. Don't ask where the other hole went.",
-    "Transmuted. Core to Cruller. Hot, greasy, and exactly what we need. I'm basically a god of pastry at this point."
+    "I fed the pastry god. It burped frosting. We... we live. The portal's open — let's GO, Cruller!",
+    "Cruller to Vermious, down the hatch. The thing purred. Portals open. I am never doing that again."
   ],
   stun_stray: [
     "Sprinkle deployed. The Stray is, ah, napping forcefully. You're welcome. Now grab the Core before it dreams angry.",
     "Stunned it. A Neutron Sprinkle right between the optics. The Captain has aim AND nerve. Mostly aim."
+  ],
+  craft_cruller: [
+    "Fryer's on. Two Cores and a Sprinkle walk in, one Void Cruller walks out. Alchemy, Cruller — the Captain does alchemy now.",
+    "Crafted. Void Cruller, hot and ready. I'm basically a god of pastry at this point. Don't ask me to share."
+  ],
+  search_side: [
+    "The Captain searches. (The Captain delegates searching, but fine.) And — ha! A bonus! Glaze smiles upon the curious.",
+    "Side passage explored. I found something shiny. You're welcome. This is why Captains check lockers, Cruller."
   ]
 }
 
@@ -195,9 +199,10 @@ function buildActorContext(state, result) {
   if (result.events?.emptyPromise) bits.push('EMPTY_BRIBE (player offered a bribe they do not have)')
   if (result.events?.alreadyDone) bits.push('ALREADY_DONE (player asked for an action that is already completed; note it and move on)')
   if (result.events?.unclear) bits.push('UNCLEAR_INPUT (you did not understand what the player wants — ask them to clarify what action they want)')
+  if (result.events?.sidePickup) bits.push(`SIDE_PICKUP (you found a bonus ${result.events.sidePickup.label} in a side passage — react with pleasant surprise)`)
+  if (result.events?.crafted) bits.push('YOU CRAFTED A VOID CRULLER (2 Cores + 1 Sprinkle at the pastry station)')
   if (result.progress?.riftSealed) bits.push('YOU JUST SEALED THE RIFT (cost a Glaze Core)')
   if (result.progress?.vermiousFed) bits.push('YOU JUST FED VERMIOUS -> PORTAL OPEN')
-  if (result.progress?.transmute) bits.push('YOU JUST TRANSMUTED A CORE INTO A CRULLER')
   if (result.progress?.strayStunned) bits.push('YOU JUST STUNNED THE CHROME STRAY')
   if (result.progress?.nextRoom) bits.push(`YOU_MOVED_TO: ${ROOMS[result.progress.nextRoom]?.name}`)
   if (result.state?.currentRoom === 'escape_portal') bits.push('YOU REACHED THE ESCAPE PORTAL — freedom')

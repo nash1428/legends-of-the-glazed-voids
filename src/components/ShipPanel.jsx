@@ -9,8 +9,10 @@ import GaugeBar from './GaugeBar.jsx'
 
 const RESOURCES = [
   { key: 'glazeCores', icon: '◆', label: 'Cores', color: 'text-cyan-glaze' },
-  { key: 'voidCrullers', icon: '◯', label: 'Crullers', color: 'text-glaze-pink' },
-  { key: 'neutronSprinkles', icon: '✦', label: 'Sprinkles', color: 'text-glaze-gold' }
+  { key: 'neutronSprinkles', icon: '✦', label: 'Sprkl', color: 'text-glaze-gold' },
+  { key: 'voidCrullers', icon: '◯', label: 'Cruller', color: 'text-glaze-pink' },
+  { key: 'raspberrySingularity', icon: '★', label: 'Rasp', color: 'text-glaze-pink' },
+  { key: 'forbiddenDoughnut', icon: '☠', label: 'Frbdn', color: 'text-danger' }
 ]
 
 export default function ShipPanel({ state, mood }) {

@@ -9,7 +9,7 @@ import { heuristicJudge } from './heuristicJudge.js'
 import { ROOMS } from '../engine/rooms.js'
 
 const SCHEMA = `{
-  "action_id": "move_to_next_room | grab_core | seal_rift | feed_vermious | stun_stray | transmute | none",
+  "action_id": "move_to_next_room | grab_core | seal_rift | feed_vermious | stun_stray | craft_cruller | search_side | none",
   "appeal_vector": {
     "command": 0.0, "flatter": 0.0, "bribe": 0.0, "reassure": 0.0,
     "argue": 0.0, "threaten": 0.0, "trick": 0.0, "apologize": 0.0

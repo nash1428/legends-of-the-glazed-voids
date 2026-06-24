@@ -64,12 +64,13 @@ const PHRASES = {
 }
 
 const ACTION_PHRASES = {
-  move_to_next_room: ['move to the next room', 'move to next room', 'next room', 'leave the bridge', 'head to the next', 'go to the next', 'move on', 'move forward', 'go forward', 'advance', 'proceed to the next', 'leave this room', 'let\'s go', 'move to the glazing', 'head to the glazing bay', 'move to the bay', 'move to the maw', 'head to the maw', 'move to the hatch', 'move to', 'head to', 'walk to', 'step to', 'proceed', 'get going', 'get moving', 'leave', 'go on'],
+  move_to_next_room: ['move to the next room', 'move to next room', 'next room', 'leave the bridge', 'head to the next', 'go to the next', 'move on', 'move forward', 'go forward', 'advance', 'proceed to the next', 'leave this room', 'let\'s go', 'move to the glazing', 'head to the glazing bay', 'move to the bay', 'move to the maw', 'head to the maw', 'move to the conduit', 'move to the final', 'move to the shaft', 'move to the corridor', 'move to', 'head to', 'walk to', 'step to', 'proceed', 'get going', 'get moving', 'leave', 'go on', 'forward'],
   grab_core: ['grab the core', 'grab a core', 'take the core', 'get the core', 'take a core', 'get a core', 'retrieve the core', 'snatch', 'pocket the core', 'grab it', 'take it', 'grab a glaze core', 'get the glaze core', 'cores', 'core'],
   stun_stray: ['stun', 'sprinkle', 'distract the stray', 'neutron', 'zap', 'knock out the stray', 'stun the stray'],
   seal_rift: ['seal the rift', 'seal it', 'close the rift', 'close it', 'shut the rift', 'patch the rift', 'seal the tear', 'close the tear', 'seal'],
   feed_vermious: ['feed vermious', 'feed it', 'feed the', 'give it the cruller', 'give vermious', 'feed him', 'feed the beast', 'toss it a cruller', 'feed the thing', 'feed'],
-  transmute: ['transmute', 'convert a core', 'convert the core', 'fryer', 'forge a cruller', 'make a cruller', 'make the cruller', 'turn a core into', 'convert']
+  craft_cruller: ['craft', 'transmute', 'convert', 'fryer', 'forge a cruller', 'make a cruller', 'make the cruller', 'bake', 'pastry station', 'craft a cruller', 'craft a void cruller'],
+  search_side: ['search', 'search the', 'side path', 'side passage', 'side vent', 'inspection panel', 'broken locker', 'look behind', 'check the panel', 'check the vent', 'check the locker', 'explore the side', 'side area', 'search around']
 }
 
 const FLAG_PATTERNS = {
